@@ -244,11 +244,15 @@ async function scanNFC() {
 
     ndef.onreading = async (event) => {
       try {
-        // Format serial number as 00:04:0::03:05:0::05:05:0::05:02:0::0A:06:0::01:0C:0::09:00
+        // Format serial number in the exact requested format
         const serialBytes = new Uint8Array(event.serialNumber);
         const formattedSerial = Array.from(serialBytes)
           .map(b => b.toString(16).padStart(2, '0').toUpperCase())
           .join(':0::') + ':00';
+        
+        // Ensure the format matches exactly: 00:04:0::03:05:0::05:05:0::05:02:0::0A:06:0::01:0C:0::09:00
+        // If the serial number has 7 bytes, this will produce the exact format
+        console.log("Formatted Serial:", formattedSerial); // Debug output
         
         // Generate unique expected text for each user
         const uniqueExpectedText = "ACCESS_" + 
@@ -258,16 +262,14 @@ async function scanNFC() {
         const aesKey = generateRandomHex(32);
         const encryptedText = await encryptText(uniqueExpectedText, aesKey);
 
-        // Prepare the data to write to the tag
+        // Write to NFC tag
         const encoder = new TextEncoder();
         await ndef.write({
-          records: [
-            {
-              recordType: "text",
-              data: encoder.encode(encryptedText),
-              lang: "en" // Language code is required for text records
-            }
-          ]
+          records: [{
+            recordType: "text",
+            data: encoder.encode(encryptedText),
+            lang: "en"
+          }]
         });
         
         // Prepare registration data
@@ -292,7 +294,8 @@ async function scanNFC() {
 
         if (!response.ok) throw new Error('Registration failed');
 
-        document.getElementById('nfc-status').textContent = 'NFC registered successfully!';
+        document.getElementById('nfc-status').textContent = 
+          `NFC registered successfully! Serial: ${formattedSerial}`;
         nextSection('final');
       } catch (err) {
         console.error("NFC registration error:", err);
