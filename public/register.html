@@ -218,43 +218,83 @@
     nextSection("step3");
   }
 
-  function handleNFCChoice(wantsNFC) {
-    if (wantsNFC) {
-      if ('NDEFReader' in window) {
-        nextSection("step4");
-      } else {
-        document.getElementById('nfc-status').textContent = 'NFC not supported in this browser';
-        submitForm(null);
-      }
+function handleNFCChoice(wantsNFC) {
+  if (wantsNFC) {
+    if ('NDEFReader' in window) {
+      nextSection("step4");
     } else {
-      submitForm(null);
+      document.getElementById('nfc-status').textContent = 'Your device doesn\'t support NFC.';
+      // Show option to proceed without NFC
+      const proceedBtn = document.createElement('button');
+      proceedBtn.textContent = 'Proceed Without NFC';
+      proceedBtn.onclick = proceedWithoutNfc;
+      document.getElementById('step3').appendChild(proceedBtn);
     }
+  } else {
+    proceedWithoutNfc();
   }
+}
 
+  function proceedWithoutNfc() {
+  const data = {
+    username: document.getElementById('username').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    password: document.getElementById('password').value,
+    mobileNumber: fullNumber,
+    authData: null
+  };
+
+  fetch('/api/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Registration failed');
+    nextSection('final');
+  })
+  .catch(err => {
+    console.error("Registration error:", err);
+    document.getElementById('nfc-status').textContent = 'Error: ' + err.message;
+  });
+}
+
+// NFC Functions
 async function scanNFC() {
+  const nfcStatus = document.getElementById('nfc-status');
+  const scanBtn = document.querySelector('#step4 button'); // The scan button in step4
+
   try {
+    // Check NFC support
     if (!('NDEFReader' in window)) {
-      throw new Error('NFC not supported');
+      nfcStatus.textContent = "Your device doesn't support NFC. Please proceed without NFC.";
+      document.getElementById('proceedWithoutNfcBtn').style.display = 'block';
+      return;
     }
 
     const ndef = new NDEFReader();
-    document.getElementById('nfc-status').textContent = 'Ready to scan...';
+    nfcStatus.textContent = 'Ready to scan...';
+    scanBtn.disabled = true;
 
     await ndef.scan();
 
     ndef.onreading = async (event) => {
       try {
-        // Format serial number in the exact requested format
-        const serialBytes = new Uint8Array(event.serialNumber);
-        const formattedSerial = Array.from(serialBytes)
-          .map(b => b.toString(16).padStart(2, '0').toUpperCase())
-          .join(':0::') + ':00';
+        // Use raw serial number (Uint8Array)
+        const rawSerial = event.serialNumber;
         
-        // Ensure the format matches exactly: 00:04:0::03:05:0::05:05:0::05:02:0::0A:06:0::01:0C:0::09:00
-        // If the serial number has 7 bytes, this will produce the exact format
-        console.log("Formatted Serial:", formattedSerial); // Debug output
-        
-        // Generate unique expected text for each user
+        if (!rawSerial || rawSerial.length === 0) {
+          nfcStatus.textContent = "⚠️ Serial number not detected. Try a different tag.";
+          scanBtn.disabled = false;
+          return;
+        }
+
+        // Convert raw serial to hex string for storage (no formatting)
+        const serialHex = Array.from(rawSerial)
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+
+        // Generate unique expected text
         const uniqueExpectedText = "ACCESS_" + 
           Math.random().toString(36).substring(2, 8).toUpperCase() + 
           "_GRANTED";
@@ -263,15 +303,14 @@ async function scanNFC() {
         const encryptedText = await encryptText(uniqueExpectedText, aesKey);
 
         // Write to NFC tag
-        const encoder = new TextEncoder();
         await ndef.write({
           records: [{
             recordType: "text",
-            data: encoder.encode(encryptedText),
+            data: new TextEncoder().encode(encryptedText),
             lang: "en"
           }]
         });
-        
+
         // Prepare registration data
         const data = {
           username: document.getElementById('username').value.trim(),
@@ -281,11 +320,12 @@ async function scanNFC() {
           authData: {
             aesKey,
             expectedText: uniqueExpectedText,
-            allowedSerial: formattedSerial,
+            allowedSerial: serialHex, // Storing as plain hex string
             encryptedText
           }
         };
 
+        // Register user
         const response = await fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -294,22 +334,25 @@ async function scanNFC() {
 
         if (!response.ok) throw new Error('Registration failed');
 
-        document.getElementById('nfc-status').textContent = 
-          `NFC registered successfully! Serial: ${formattedSerial}`;
+        nfcStatus.textContent = '✅ NFC registered successfully!';
         nextSection('final');
       } catch (err) {
         console.error("NFC registration error:", err);
-        document.getElementById('nfc-status').textContent = 'Error: ' + err.message;
+        nfcStatus.textContent = 'Error: ' + err.message;
+        scanBtn.disabled = false;
       }
     };
 
     ndef.onerror = (err) => {
       console.error("NFC error:", err);
-      document.getElementById('nfc-status').textContent = 'NFC error: ' + err.message;
+      nfcStatus.textContent = 'NFC error: ' + err.message;
+      scanBtn.disabled = false;
     };
+
   } catch (err) {
     console.error("NFC setup error:", err);
-    document.getElementById('nfc-status').textContent = 'NFC error: ' + err.message;
+    nfcStatus.textContent = 'NFC error: ' + err.message;
+    scanBtn.disabled = false;
   }
 }
 
