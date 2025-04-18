@@ -127,17 +127,19 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: "Password must be at least 8 characters" });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new User({
+    const userData = {
       username,
       email,
-      password: hashedPassword,
-      mobileNumber,
-      authData: authData || null
-    });
+      password: password, // Storing plain password
+      mobileNumber
+    };
 
+    // Add authData if provided
+    if (authData) {
+      userData.authData = authData;
+    }
+
+    const newUser = new User(userData);
     await newUser.save();
     
     res.status(201).json({ 
@@ -145,7 +147,8 @@ app.post('/api/register', async (req, res) => {
       user: {
         username: newUser.username,
         email: newUser.email,
-        mobileNumber: newUser.mobileNumber
+        mobileNumber: newUser.mobileNumber,
+        hasNFC: !!newUser.authData
       }
     });
 
@@ -153,7 +156,6 @@ app.post('/api/register', async (req, res) => {
     console.error("Registration error:", err);
     
     if (err.code === 11000) {
-      // MongoDB duplicate key error
       const field = Object.keys(err.keyPattern)[0];
       return res.status(400).json({ 
         error: `${field} already exists` 
@@ -166,5 +168,6 @@ app.post('/api/register', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`\n✅ Server running at:`);
+  console.log(`👉 PC:     http://localhost:${PORT}`);
 });
