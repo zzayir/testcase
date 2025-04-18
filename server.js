@@ -8,6 +8,14 @@ require('dotenv').config();
 const app = express();
 const os = require('os');
 
+
+// Configure CORS
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGIN || 'http://localhost:3000',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
+
 app.use(bodyParser.json());
 const path = require('path');
 app.use(express.static(path.join(__dirname, 'public')));
@@ -176,8 +184,6 @@ function getLocalIP() {
         return 'localhost';
     }
 }
-
-
 
 const PORT = process.env.PORT || 3010;
 const server = app.listen(PORT, "0.0.0.0", () => {
