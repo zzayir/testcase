@@ -6,6 +6,8 @@ const twilio = require('twilio');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 const app = express();
+const os = require('os');
+
 
 // Configure CORS
 app.use(cors({
@@ -166,8 +168,27 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`\n✅ Server running at:`);
-  console.log(`👉 PC:     http://localhost:${PORT}`);
+function getLocalIP() {
+    try {
+        const interfaces = os.networkInterfaces();
+        for (const iface of Object.values(interfaces)) {
+            for (const config of iface) {
+                if (config.family === 'IPv4' && !config.internal) {
+                    return config.address;
+                }
+            }
+        }
+        return 'localhost';
+    } catch (err) {
+        console.error('Error getting local IP:', err);
+        return 'localhost';
+    }
+}
+
+const PORT = process.env.PORT || 3010;
+const server = app.listen(PORT, "0.0.0.0", () => {
+    const localIP = getLocalIP();
+    console.log(`\n✅ Server running at:`);
+    console.log(`👉 PC:     http://localhost:${PORT}`);
+    console.log(`👉 Mobile: http://${localIP}:${PORT}\n`);
 });
