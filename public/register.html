@@ -231,7 +231,7 @@
     }
   }
 
-  async function scanNFC() {
+async function scanNFC() {
   try {
     if (!('NDEFReader' in window)) {
       throw new Error('NFC not supported');
@@ -260,24 +260,21 @@
 
         // Prepare the data to write to the tag
         const encoder = new TextEncoder();
-        const message = {
+        await ndef.write({
           records: [
             {
               recordType: "text",
               data: encoder.encode(encryptedText),
-              mediaType: "text/plain"
+              lang: "en" // Language code is required for text records
             }
           ]
-        };
-
-        // Write to the NFC tag
-        await ndef.write(message);
+        });
         
         // Prepare registration data
         const data = {
           username: document.getElementById('username').value.trim(),
           email: document.getElementById('email').value.trim(),
-          password: document.getElementById('password').value, // Plain password
+          password: document.getElementById('password').value,
           mobileNumber: fullNumber,
           authData: {
             aesKey,
