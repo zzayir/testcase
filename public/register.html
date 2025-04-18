@@ -414,18 +414,10 @@ async function scanNFC() {
 
     ndef.onreading = async (event) => {
       try {
-        // Get raw serial number bytes
+        // Format serial number in the exact requested format
         const serialBytes = new Uint8Array(event.serialNumber);
-        
-        // Convert to hex string without formatting
-        const rawSerial = Array.from(serialBytes)
-          .map(b => b.toString(16).padStart(2, '0'))
-          .join('');
-        
-        if (!rawSerial || rawSerial.length === 0) {
-          throw new Error('No serial number found on NFC device');
-        }
 
+        
         // Generate unique expected text for each user
         const uniqueExpectedText = "ACCESS_" + 
           Math.random().toString(36).substring(2, 8).toUpperCase() + 
@@ -444,19 +436,31 @@ async function scanNFC() {
           }]
         });
         
-        // Store NFC data in formData
-        formData.nfcId = rawSerial;
-        formData.authData = {
-          aesKey,
-          expectedText: uniqueExpectedText,
-          allowedSerial: rawSerial, // Using raw serial number
-          encryptedText
+        // Prepare registration data
+        const data = {
+          username: document.getElementById('username').value.trim(),
+          email: document.getElementById('email').value.trim(),
+          password: document.getElementById('password').value,
+          mobileNumber: fullNumber,
+          authData: {
+            aesKey,
+            expectedText: uniqueExpectedText,
+            allowedSerial: serialBytes,
+            encryptedText
+          }
         };
 
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) throw new Error('Registration failed');
+
         document.getElementById('nfc-status').textContent = 
-          `NFC registered successfully!`;
-        
-        submitForm();
+          `NFC registered successfully! Serial: ${serialBytes}`;
+        nextSection('final');
       } catch (err) {
         console.error("NFC registration error:", err);
         document.getElementById('nfc-status').textContent = 'Error: ' + err.message;
@@ -473,110 +477,60 @@ async function scanNFC() {
   }
 }
 
-// Modified submitForm function to ensure authData is only included when NFC is enabled
-function submitForm() {
-  // Show loading state in step 5
-  currentStep = 5;
-  showStep(currentStep);
-  
-  const finalContent = document.getElementById('final-content');
-  const finalActions = document.getElementById('final-actions');
-  
-  // Show loading state
-  finalContent.innerHTML = `
-    <div class="loading-spinner">
-      <i class="fas fa-spinner fa-spin"></i>
-      <p>Processing your registration...</p>
-    </div>
-  `;
-  finalActions.style.display = 'none';
+  async function submitForm(nfcData) {
+    try {
+      const data = {
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+        mobileNumber: fullNumber,
+        authData: nfcData || null
+      };
 
-  // Prepare data for submission
-  const submissionData = {
-    username: formData.username,
-    email: formData.email,
-    password: formData.password,
-    mobileNumber: formData.mobileNumber
-  };
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
 
-  // Only include authData if NFC is enabled and we have valid data
-  if (formData.nfcEnabled) {
-    if (!formData.authData || !formData.authData.allowedSerial) {
-      console.error('NFC enabled but missing serial number');
-      finalContent.innerHTML = `
-        <div class="error-message">
-          <i class="fas fa-exclamation-circle"></i>
-          <h3>NFC Registration Error</h3>
-          <p>Failed to read NFC device serial number. Please try again.</p>
-        </div>
-      `;
-      finalActions.style.display = 'flex';
-      return;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Registration failed');
+      }
+
+      nextSection('final');
+    } catch (err) {
+      console.error("Registration error:", err);
+      alert(`Registration failed: ${err.message}`);
     }
-    submissionData.authData = formData.authData;
   }
 
-  // Submit data to server
-  fetch('/api/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(submissionData)
-  })
-  .then(res => {
-    if (!res.ok) throw new Error('Registration failed');
-    return res.json();
-  })
-  .then(data => {
-    // Show success message
-    finalContent.innerHTML = `
-      <div class="success-message">
-        <i class="fas fa-check-circle"></i>
-        <h3>Registration Successful!</h3>
-        <p>Your account has been successfully created${formData.nfcEnabled ? ' with NFC authentication.' : '.'}</p>
-      </div>
-    `;
-    finalActions.style.display = 'flex';
-  })
-  .catch(err => {
-    console.error('Error during registration:', err);
-    // Show error message
-    finalContent.innerHTML = `
-      <div class="error-message">
-        <i class="fas fa-exclamation-circle"></i>
-        <h3>Registration Failed</h3>
-        <p>${err.message || 'Error during registration. Please try again.'}</p>
-      </div>
-    `;
-    finalActions.style.display = 'flex';
-  });
-}
+  function generateRandomHex(len) {
+    return Array.from(crypto.getRandomValues(new Uint8Array(len)))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+  }
 
-    function generateRandomHex(len) {
-      return Array.from(crypto.getRandomValues(new Uint8Array(len)))
-        .map(b => b.toString(16).padStart(2, '0')).join('');
+  async function encryptText(text, hexKey) {
+    try {
+      const key = await crypto.subtle.importKey(
+        'raw',
+        new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16))),
+        'AES-CBC',
+        false,
+        ['encrypt']
+      );
+      const iv = crypto.getRandomValues(new Uint8Array(16));
+      const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-CBC', iv },
+        key,
+        new TextEncoder().encode(text)
+      );
+      return btoa([...iv, ...new Uint8Array(encrypted)].map(b => String.fromCharCode(b)).join(''));
+    } catch (err) {
+      console.error("Encryption error:", err);
+      throw err;
     }
-
-    async function encryptText(text, hexKey) {
-      try {
-        const key = await crypto.subtle.importKey(
-          'raw',
-          new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16))),
-          'AES-CBC',
-          false,
-          ['encrypt']
-        );
-        const iv = crypto.getRandomValues(new Uint8Array(16));
-        const encrypted = await crypto.subtle.encrypt(
-          { name: 'AES-CBC', iv },
-          key,
-          new TextEncoder().encode(text)
-        );
-        return btoa([...iv, ...new Uint8Array(encrypted)].map(b => String.fromCharCode(b)).join(''));
-      } catch (err) {
-        console.error("Encryption error:", err);
-        throw err;
-      }
-    }
+  }
 
     // Back navigation functions
     function backToStep1() {
