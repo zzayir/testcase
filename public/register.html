@@ -289,10 +289,6 @@ async function scanNFC() {
           return;
         }
 
-        // Convert raw serial to hex string for storage (no formatting)
-        const serialHex = Array.from(rawSerial)
-          .map(b => b.toString(16).padStart(2, '0'))
-          .join('');
 
         // Generate unique expected text
         const uniqueExpectedText = "ACCESS_" + 
@@ -320,7 +316,7 @@ async function scanNFC() {
           authData: {
             aesKey,
             expectedText: uniqueExpectedText,
-            allowedSerial: serialHex, // Storing as plain hex string
+            allowedSerial: rawSerial, 
             encryptedText
           }
         };
