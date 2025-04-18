@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+  <script defer src="register.js"></script>
+</head>
+<body>
+  <!-- Step 1: Basic Info -->
+  <div id="step1">
+    <h2>Register</h2>
+    <input type="text" id="username" placeholder="Username" required><br>
+    <input type="email" id="email" placeholder="Email" required><br>
+    <input type="password" id="password" placeholder="Password" required><br>
+    <input type="password" id="confirmPassword" placeholder="Confirm Password" required><br>
+    <button onclick="checkStep1()">Next</button>
+    <p id="message"></p>
+  </div>
+
+  <!-- Step 2: Mobile & OTP -->
+  <div id="step2" style="display:none">
+    <select id="countryCode"></select>
+    <input type="text" id="mobile" placeholder="Mobile Number" required><br>
+    <button onclick="sendOTP()">Send OTP</button><br>
+    <input type="text" id="otp" placeholder="Enter OTP" style="display:none">
+    <button onclick="verifyOTP()" style="display:none" id="verifyBtn">Verify</button><br>
+    <button onclick="skipOTP()">Save Mobile Number Without OTP</button>
+    <p id="otpMsg"></p>
+  </div>
+
+  <!-- Step 3: NFC Prompt -->
+  <section id="step3" style="display:none">
+    <p>Do you want to enable NFC Authenticator?</p>
+    <button onclick="handleNFCChoice(true)">Yes</button>
+    <button onclick="handleNFCChoice(false)">No</button>
+  </section>
+
+  <!-- Step 4: NFC Auth -->
+  <section id="step4" style="display:none">
+    <p>Scan your NFC tag to register your authenticator...</p>
+    <button onclick="scanNFC()">Scan Now</button>
+    <p id="nfc-status"></p>
+  </section>
+
+  <!-- Final Step -->
+  <section id="final" style="display:none">
+    <p id="final-message">Authenticator is ready. Account was created successfully.</p>
+    <button onclick="location.href='employee.html'">Go to Employee Dashboard</button>
+    <button onclick="history.back()">Back</button>
+  </section>
+
+<script>
+  // Helper functions
+  function showError(elementId, message) {
+    const element = document.getElementById(elementId);
+    element.textContent = message;
+    element.classList.remove('hidden');
+  }
+
+  function clearError(elementId) {
+    const element = document.getElementById(elementId);
+    element.textContent = '';
+    element.classList.add('hidden');
+  }
+
+  function nextSection(sectionId) {
+    document.querySelectorAll('div, section').forEach(el => el.style.display = 'none');
+    document.getElementById(sectionId).style.display = 'block';
+  }
+
+  // Populate country codes
+  fetch('https://restcountries.com/v3.1/all')
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to load country codes');
+      return res.json();
+    })
+    .then(data => {
+      const select = document.getElementById('countryCode');
+      data.sort((a, b) => a.name.common.localeCompare(b.name.common)).forEach(country => {
+        const root = country.idd?.root || '';
+        const suffix = country.idd?.suffixes ? country.idd.suffixes[0] : '';
+        const option = document.createElement('option');
+        option.value = root + suffix;
+        option.textContent = `${country.name.common} (${option.value})`;
+        select.appendChild(option);
+      });
+    })
+    .catch(err => {
+      console.error('Error loading country codes:', err);
+      // Fallback to some default options
+      const select = document.getElementById('countryCode');
+      const option = document.createElement('option');
+      option.value = '+1';
+      option.textContent = 'United States (+1)';
+      select.appendChild(option);
+    });
+
+  // Step 1 check
+  function checkStep1() {
+    clearError('message');
+    
+    const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (!username || !email || !password || !confirmPassword) {
+      showError('message', 'All fields are required');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showError('message', 'Passwords do not match');
+      return;
+    }
+
+    if (password.length < 8) {
+      showError('message', 'Password must be at least 8 characters');
+      return;
+    }
+
+    fetch('/api/check-username', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Username check failed');
+      return res.json();
+    })
+    .then(data => {
+      if (!data.available) {
+        showError('message', 'Username not available');
+      } else {
+        nextSection('step2');
+      }
+    })
+    .catch(err => {
+      console.error('Error checking username:', err);
+      showError('message', 'Error checking username availability');
+    });
+  }
+
+  let fullNumber;
+
+  function sendOTP() {
+    clearError('otpMsg');
+    
+    const mobile = document.getElementById('mobile').value.trim();
+    const code = document.getElementById('countryCode').value;
+    
+    if (!mobile) {
+      showError('otpMsg', 'Mobile number is required');
+      return;
+    }
+
+    fullNumber = code + mobile;
+
+    fetch('/api/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mobileNumber: fullNumber })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to send OTP');
+      return res.json();
+    })
+    .then(() => {
+      document.getElementById('otp').style.display = 'inline';
+      document.getElementById('verifyBtn').style.display = 'inline';
+    })
+    .catch(err => {
+      console.error('Error sending OTP:', err);
+      showError('otpMsg', 'Failed to send OTP');
+    });
+  }
+
+  function verifyOTP() {
+    const otp = document.getElementById('otp').value.trim();
+    
+    if (!otp) {
+      showError('otpMsg', 'OTP is required');
+      return;
+    }
+
+    fetch('/api/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mobileNumber: fullNumber, otp })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('OTP verification failed');
+      return res.json();
+    })
+    .then(data => {
+      if (data.verified) {
+        nextSection('step3');
+      } else {
+        showError('otpMsg', 'Incorrect OTP');
+      }
+    })
+    .catch(err => {
+      console.error('Error verifying OTP:', err);
+      showError('otpMsg', 'Error verifying OTP');
+    });
+  }
+
+  function skipOTP() {
+    const mobile = document.getElementById('mobile').value.trim();
+    const code = document.getElementById('countryCode').value;
+    
+    if (!mobile) {
+      showError('otpMsg', 'Mobile number is required');
+      return;
+    }
+
+    fullNumber = code + mobile;
+    nextSection("step3");
+  }
+
+  function handleNFCChoice(wantsNFC) {
+    if (wantsNFC) {
+      if ('NDEFReader' in window) {
+        nextSection("step4");
+      } else {
+        document.getElementById('nfc-status').textContent = 'NFC not supported in this browser';
+        submitForm(null);
+      }
+    } else {
+      submitForm(null);
+    }
+  }
+
+  async function scanNFC() {
+    try {
+      if (!('NDEFReader' in window)) {
+        throw new Error('NFC not supported');
+      }
+
+      const ndef = new NDEFReader();
+      await ndef.scan();
+
+      document.getElementById('nfc-status').textContent = 'Ready to scan...';
+
+      ndef.onreading = async (event) => {
+        try {
+          const serial = event.serialNumber;
+          const aesKey = generateRandomHex(32);
+          const expectedText = "ACCESS_GRANTED";
+          const encryptedText = await encryptText(expectedText, aesKey);
+
+          const data = {
+            username: document.getElementById('username').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value,
+            mobileNumber: fullNumber,
+            authData: {
+              aesKey,
+              expectedText,
+              allowedSerial: serial,
+              encryptedText
+            }
+          };
+
+          const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+
+          if (!response.ok) throw new Error('Registration failed');
+
+          nextSection('final');
+        } catch (err) {
+          console.error("NFC registration error:", err);
+          document.getElementById('nfc-status').textContent = 'Registration failed. Try again.';
+        }
+      };
+
+      ndef.onerror = (err) => {
+        console.error("NFC error:", err);
+        document.getElementById('nfc-status').textContent = 'NFC error. Try again.';
+      };
+    } catch (err) {
+      console.error("NFC setup error:", err);
+      document.getElementById('nfc-status').textContent = 'NFC not available.';
+      submitForm(null);
+    }
+  }
+
+  async function submitForm(nfcData) {
+    try {
+      const data = {
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+        mobileNumber: fullNumber,
+        authData: nfcData || null
+      };
+
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Registration failed');
+      }
+
+      nextSection('final');
+    } catch (err) {
+      console.error("Registration error:", err);
+      alert(`Registration failed: ${err.message}`);
+    }
+  }
+
+  function generateRandomHex(len) {
+    return Array.from(crypto.getRandomValues(new Uint8Array(len)))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function encryptText(text, hexKey) {
+    try {
+      const key = await crypto.subtle.importKey(
+        'raw',
+        new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16))),
+        'AES-CBC',
+        false,
+        ['encrypt']
+      );
+      const iv = crypto.getRandomValues(new Uint8Array(16));
+      const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-CBC', iv },
+        key,
+        new TextEncoder().encode(text)
+      );
+      return btoa([...iv, ...new Uint8Array(encrypted)].map(b => String.fromCharCode(b)).join(''));
+    } catch (err) {
+      console.error("Encryption error:", err);
+      throw err;
+    }
+  }
+
+  </script>
+</body>
+</html>
