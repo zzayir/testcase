@@ -482,33 +482,31 @@
     }
 
     // Populate country codes
-    fetch('https://restcountries.com/v3.1/all')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to load country codes');
-        return res.json();
-      })
-      .then(data => {
-        const select = document.getElementById('countryCode');
-        data.sort((a, b) => a.name.common.localeCompare(b.name.common)).forEach(country => {
-          const root = country.idd?.root || '';
-          const suffix = country.idd?.suffixes ? country.idd.suffixes[0] : '';
-          const option = document.createElement('option');
-          option.value = root + suffix;
-          option.textContent = `${country.flag || ''} ${root + suffix}`;
-          option.title = country.name.common;
-          select.appendChild(option);
-        });
-      })
-      .catch(err => {
-        console.error('Error loading country codes:', err);
-        // Fallback to some default options
-        const select = document.getElementById('countryCode');
+fetch('https://restcountries.com/v3.1/all')
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to load country codes');
+      return res.json();
+    })
+    .then(data => {
+      const select = document.getElementById('countryCode');
+      data.sort((a, b) => a.name.common.localeCompare(b.name.common)).forEach(country => {
+        const root = country.idd?.root || '';
+        const suffix = country.idd?.suffixes ? country.idd.suffixes[0] : '';
         const option = document.createElement('option');
-        option.value = '+1';
-        option.textContent = '🇺🇸 +1';
-        option.title = 'United States';
+        option.value = root + suffix;
+        option.textContent = `${country.name.common} (${option.value})`;
         select.appendChild(option);
       });
+    })
+    .catch(err => {
+      console.error('Error loading country codes:', err);
+      // Fallback to some default options
+      const select = document.getElementById('countryCode');
+      const option = document.createElement('option');
+      option.value = '+1';
+      option.textContent = 'United States (+1)';
+      select.appendChild(option);
+    });
 
     // Step 1 check
     function checkStep1() {
