@@ -1131,6 +1131,37 @@ app.get('/api/verify-user', async (req, res) => {
   }
 });
 
+app.post('/api/update-auth-data', async (req, res) => {
+  try {
+    const { username, isManager, authData } = req.body;
+    
+    const Model = isManager ? Manager : User;
+    const result = await Model.updateOne(
+      { username },
+      { $set: { authData } }
+    );
+
+    if (result.nModified === 0) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'User not found or no changes made' 
+      });
+    }
+
+    res.json({ 
+      success: true,
+      message: 'Authentication data updated successfully'
+    });
+
+  } catch (err) {
+    console.error('Update error:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to update authentication data'
+    });
+  }
+});
+
 // ====== MOBILE AUTH REGISTER END ======
 
 // ====== START SERVER ======
