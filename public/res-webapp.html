@@ -146,18 +146,27 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
           }]
         });
 
-        // Prepare auth data
+        // Prepare auth data - convert Uint8Array to array for JSON serialization
         const authData = {
           aesKey,
           expectedText: uniqueExpectedText,
-          allowedSerial: Array.from(rawSerial),
+          allowedSerial: Array.from(rawSerial), // Convert Uint8Array to regular array
           encryptedText
         };
+
+        console.log('Attempting to complete auth with:', { 
+          username, 
+          token,
+          authData 
+        });
 
         // Complete authentication
         const response = await fetch('/api/complete-mobile-auth', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
           body: JSON.stringify({
             username,
             token,
@@ -165,8 +174,11 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
           })
         });
 
+        const responseData = await response.json();
+        console.log('Auth response:', responseData);
+
         if (!response.ok) {
-          throw new Error('Failed to complete authentication');
+          throw new Error(responseData.error || 'Failed to complete authentication');
         }
 
         statusMessage.textContent = '✅ Authentication successful!';
