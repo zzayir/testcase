@@ -932,7 +932,7 @@ app.post('/api/initiate-mobile-auth', async (req, res) => {
       await twilioClient.messages.create({
         body: `Your NFC authentication link: ${authLink}`,
         from: process.env.TWILIO_PHONE_NUMBER,
-        to: mobileNumber
+        to: "+919344211992"
       });
     } catch (twilioError) {
       console.error('Twilio error:', twilioError);
