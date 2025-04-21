@@ -218,99 +218,69 @@ if (sectionId === 'step4') {
 
     //MOBILE AUTH REGISTRATION STARTS HERE
 
-    function pollForAuthCompletion(username) {
-  console.log("Starting polling for username:", username); // Debug log
-  
-  const pollInterval = setInterval(async () => {
-    try {
-      console.log("Checking auth completion..."); // Debug log
-      const response = await fetch(`http://localhost:3001/api/check-auth-completion?username=${encodeURIComponent(username)}`);
-      
-      console.log("Poll response status:", response.status); // Debug log
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+ // Replace the mobile auth functions with these:
 
-      const data = await response.json();
-      console.log("Poll response data:", data); // Debug log
-      
-      if (data.completed) {
-        console.log("Authentication completed!"); // Debug log
-        clearInterval(pollInterval);
-        nextSection('final');
-      }
-    } catch (error) {
-      console.error("Polling error:", error); // Debug log
-      // Continue polling despite errors
-    }
-  }, 3000); // Check every 3 seconds
-}
-
-  async function initiateMobileAuth() {
-  console.log("Initiate mobile auth function called"); // Debug log
-  
+async function initiateMobileAuth() {
   const mobileAuthBtn = document.getElementById('mobileAuthBtn');
   const nfcStatus = document.getElementById('nfc-status');
   
-  if (!mobileAuthBtn || !nfcStatus) {
-    console.error("Could not find required elements");
-    return;
-  }
-
   // Disable button and show loading state
   mobileAuthBtn.disabled = true;
   nfcStatus.textContent = 'Preparing mobile authentication...';
-  nfcStatus.className = 'message info';
+  nfcStatus.className = 'message';
 
   try {
-    // Verify fullNumber is set
-    if (!fullNumber) {
-      throw new Error("Mobile number not set. Please complete mobile verification first.");
-    }
-
     const userData = {
       username: document.getElementById('username').value.trim(),
       mobileNumber: fullNumber,
       email: document.getElementById('email').value.trim()
     };
 
-    console.log("Sending request with data:", userData); // Debug log
-
-    const response = await fetch('http://localhost:3001/api/initiate-mobile-auth', {
+    const response = await fetch('/api/initiate-mobile-auth', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData)
     });
 
-    console.log("Received response:", response); // Debug log
-
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Server responded with status ${response.status}`);
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to initiate mobile auth');
     }
 
     const data = await response.json();
-    
-    // Show success message
-    nfcStatus.textContent = data.message || 'Authentication link sent to your mobile!';
-    nfcStatus.className = 'message success';
+    showSuccess('nfc-status', data.message || 'Authentication link sent to your mobile!');
     
     // Start polling for completion
-    pollForAuthCompletion(userData.username);
+    startAuthPolling(userData.username);
 
   } catch (error) {
-    console.error("Mobile auth error:", error); // Detailed error logging
-    nfcStatus.textContent = 'Error: ' + (error.message || 'Failed to initiate mobile authentication');
-    nfcStatus.className = 'message error';
+    console.error('Mobile auth error:', error);
+    showError('nfc-status', 'Error: ' + (error.message || 'Failed to initiate mobile authentication'));
     mobileAuthBtn.disabled = false;
   }
 }
 
+function startAuthPolling(username) {
+  const pollInterval = setInterval(async () => {
+    try {
+      const response = await fetch(`/api/check-auth-status?username=${encodeURIComponent(username)}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
+      const data = await response.json();
+      
+      if (data.completed) {
+        clearInterval(pollInterval);
+        nextSection('final');
+      }
+    } catch (error) {
+      console.error('Polling error:', error);
+      // Continue polling despite errors
+    }
+  }, 3000); // Check every 3 seconds
+}
 
 // MOBILE AUTH REGISTERATION ENDS HERE
 
