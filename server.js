@@ -949,6 +949,8 @@ app.post('/api/initiate-mobile-auth', async (req, res) => {
 // Complete Mobile Authentication
 // Enhanced Complete Mobile Auth Endpoint
 app.post('/api/complete-mobile-auth', async (req, res) => {
+
+  
   try {
     const { username, token, authData } = req.body;
 
@@ -957,39 +959,39 @@ app.post('/api/complete-mobile-auth', async (req, res) => {
     console.log('AuthData:', authData);
 
     // 1. Validate Input
-    if (!username || !token || !authData) {
-      console.error('Missing required fields');
-      return res.status(400).json({ 
-        success: false,
-        error: 'Username, token, and authData are required' 
-      });
-    }
+if (!username || !token || !authData) {
+  console.error('Missing required fields');
+  return res.status(400).json({ 
+    success: false,
+    error: 'Username, token, and authData are required' 
+  });
+}
 
     // 2. Verify Session
-    const session = mobileAuthSessions.get(username);
-    if (!session) {
-      console.error('No session found for username:', username);
-      return res.status(401).json({ 
-        success: false,
-        error: 'Authentication session not found. Please restart the process.' 
-      });
-    }
+const session = mobileAuthSessions.get(username);
+if (!session) {
+  console.error('No session found for username:', username);
+  return res.status(401).json({ 
+    success: false,
+    error: 'Authentication session not found. Please restart the process.' 
+  });
+}
 
-    if (session.token !== token) {
-      console.error('Token mismatch for user:', username);
-      return res.status(401).json({ 
-        success: false,
-        error: 'Invalid authentication token' 
-      });
-    }
+if (session.token !== token) {
+  console.error('Token mismatch for user:', username);
+  return res.status(401).json({ 
+    success: false,
+    error: 'Invalid authentication token' 
+  });
+}
 
-    if (Date.now() > session.expiresAt) {
-      console.error('Expired token for user:', username);
-      return res.status(401).json({ 
-        success: false,
-        error: 'Authentication session expired' 
-      });
-    }
+if (Date.now() > session.expiresAt) {
+  console.error('Expired token for user:', username);
+  return res.status(401).json({ 
+    success: false,
+    error: 'Authentication session expired' 
+  });
+}
 
     // 3. Find User (check both collections)
     let user = await User.findOne({ username });
