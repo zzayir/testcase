@@ -946,56 +946,74 @@ app.post('/api/initiate-mobile-auth', async (req, res) => {
 
 // Complete Mobile Authentication
 // Enhanced Complete Mobile Auth Endpoint
+// Enhanced Complete Mobile Auth Endpoint
 app.post('/api/complete-mobile-auth', async (req, res) => {
   try {
     const { username, token, authData } = req.body;
 
-    console.log('Auth Request Received:', { username }); // Debug log
+    console.log('Received auth completion request:', { username, token, authData });
 
-    // 1. Verify the mobile auth session exists
-    const session = mobileAuthSessions.get(username);
-    if (!session) {
-      console.log('No auth session found for:', username);
-      return res.status(401).json({ 
+    // Validate input
+    if (!username || !token || !authData) {
+      console.log('Missing required fields');
+      return res.status(400).json({ 
         success: false,
-        error: 'Authentication session expired. Please restart the process.' 
+        error: 'Missing required fields' 
       });
     }
 
-    // 2. Find the user in BOTH collections
-    let user = await User.findOne({ username });
-    if (!user) {
-      user = await Manager.findOne({ username });
-      if (!user) {
-        console.log('User not found in either collection:', username);
-        return res.status(404).json({ 
-          success: false,
-          error: 'User registration incomplete. Please register first.' 
-        });
-      }
+    // Verify token
+    const session = mobileAuthSessions.get(username);
+    if (!session || session.token !== token) {
+      console.log('Invalid or expired token');
+      return res.status(401).json({ 
+        success: false,
+        error: 'Invalid or expired token' 
+      });
     }
 
-    // 3. Update the user record
-    const updatedUser = await user.constructor.findOneAndUpdate(
-      { _id: user._id },
+    if (Date.now() > session.expiresAt) {
+      console.log('Token expired');
+      return res.status(401).json({ 
+        success: false,
+        error: 'Token expired' 
+      });
+    }
+
+    // Convert serial number if needed
+    if (authData.allowedSerial && Array.isArray(authData.allowedSerial)) {
+      authData.allowedSerial = authData.allowedSerial.join(',');
+    }
+
+    // Update user with NFC data
+    const updatedUser = await User.findOneAndUpdate(
+      { username },
       { $set: { authData } },
       { new: true }
     );
 
-    // 4. Clean up
+    if (!updatedUser) {
+      console.log('User not found');
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Clear the session
     mobileAuthSessions.delete(username);
 
-    console.log('Successfully updated NFC auth for:', username);
+    console.log('Mobile authentication completed successfully for:', username);
     res.json({ 
       success: true,
-      message: 'NFC authentication completed successfully'
+      message: 'Mobile authentication completed successfully'
     });
 
   } catch (error) {
-    console.error('Complete Mobile Auth Error:', error);
+    console.error('Mobile auth completion error:', error);
     res.status(500).json({ 
       success: false,
-      error: 'Internal server error during NFC registration',
+      error: 'Failed to complete mobile authentication',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
