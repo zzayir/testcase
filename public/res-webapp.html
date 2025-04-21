@@ -110,26 +110,49 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
   const scanBtn = document.getElementById('scanBtn');
   
   scanBtn.disabled = true;
-  statusMessage.textContent = 'Ready to scan...';
+  statusMessage.textContent = 'Initializing...';
   statusMessage.className = 'message';
 
   try {
-    if (!('NDEFReader' in window)) {
-      throw new Error('Your device doesn\'t support NFC');
+    // 1. First verify the user exists and session is valid
+    statusMessage.textContent = 'Verifying your session...';
+    
+    const verifyResponse = await fetch(`/api/verify-user?username=${username}`);
+    if (!verifyResponse.ok) {
+      throw new Error('User verification failed');
     }
+    
+    const verifyData = await verifyResponse.json();
+    if (!verifyData.exists) {
+      throw new Error('Please complete registration first');
+    }
+
+    // 2. Check NFC support
+    statusMessage.textContent = 'Checking NFC support...';
+    
+    if (!('NDEFReader' in window)) {
+      throw new Error('Your device doesn\'t support NFC. Please use mobile authentication.');
+    }
+
+    // 3. Initialize NFC reader
+    statusMessage.textContent = 'Preparing NFC scanner...';
     
     const ndef = new NDEFReader();
     await ndef.scan();
-    
+    statusMessage.textContent = 'Ready to scan NFC tag...';
+
+    // 4. Set up NFC event handlers
     ndef.onreading = async (event) => {
       try {
+        statusMessage.textContent = 'Processing NFC tag...';
+        
         const rawSerial = event.serialNumber;
         
         if (!rawSerial || rawSerial.length === 0) {
-          throw new Error('Serial number not detected');
+          throw new Error('No serial number detected. Try a different tag.');
         }
         
-        // Generate unique expected text
+        // Generate unique credentials
         const uniqueExpectedText = "ACCESS_" + 
           Math.random().toString(36).substring(2, 8).toUpperCase() + 
           "_GRANTED";
@@ -138,6 +161,7 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
         const encryptedText = await encryptText(uniqueExpectedText, aesKey);
 
         // Write to NFC tag
+        statusMessage.textContent = 'Writing to NFC tag...';
         await ndef.write({
           records: [{
             recordType: "text",
@@ -146,21 +170,16 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
           }]
         });
 
-        // Prepare auth data - convert Uint8Array to array for JSON serialization
+        // Prepare auth data
         const authData = {
           aesKey,
           expectedText: uniqueExpectedText,
-          allowedSerial: Array.from(rawSerial), // Convert Uint8Array to regular array
+          allowedSerial: Array.from(rawSerial),
           encryptedText
         };
 
-        console.log('Attempting to complete auth with:', { 
-          username, 
-          token,
-          authData 
-        });
-
         // Complete authentication
+        statusMessage.textContent = 'Finalizing authentication...';
         const response = await fetch('/api/complete-mobile-auth', {
           method: 'POST',
           headers: { 
@@ -174,25 +193,23 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
           })
         });
 
-        const responseData = await response.json();
-        console.log('Auth response:', responseData);
-
         if (!response.ok) {
-          throw new Error(responseData.error || 'Failed to complete authentication');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Authentication failed');
         }
 
+        // Success
         statusMessage.textContent = '✅ Authentication successful!';
         statusMessage.className = 'message success';
         
-        // Show completion message
         setTimeout(() => {
-          alert('Registration process complete. Watch your computer.');
+          alert('NFC registration complete!');
           window.close();
         }, 2000);
         
       } catch (err) {
         console.error('NFC processing error:', err);
-        statusMessage.textContent = 'Error: ' + err.message;
+        statusMessage.textContent = `Error: ${err.message}`;
         statusMessage.className = 'message error';
         scanBtn.disabled = false;
       }
@@ -200,46 +217,56 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
     
     ndef.onerror = (err) => {
       console.error('NFC error:', err);
-      statusMessage.textContent = 'NFC error: ' + err.message;
+      statusMessage.textContent = `NFC Error: ${err.message}`;
       statusMessage.className = 'message error';
       scanBtn.disabled = false;
     };
     
   } catch (err) {
-    console.error('NFC setup error:', err);
-    statusMessage.textContent = 'Error: ' + err.message;
+    console.error('Setup error:', err);
+    statusMessage.textContent = `Error: ${err.message}`;
     statusMessage.className = 'message error';
+    
+    if (err.message.includes('doesn\'t support NFC')) {
+      // Offer alternative authentication method
+      setTimeout(() => {
+        if (confirm("Your device doesn't support NFC. Would you like to try mobile authentication instead?")) {
+          window.location.href = `/mobile-auth.html?username=${username}&token=${token}`;
+        }
+      }, 500);
+    }
+    
     scanBtn.disabled = false;
   }
 });
-    
-    // Helper functions (same as in register.html)
-    function generateRandomHex(len) {
-      return Array.from(crypto.getRandomValues(new Uint8Array(len)))
-        .map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-    
-    async function encryptText(text, hexKey) {
-      try {
-        const key = await crypto.subtle.importKey(
-          'raw',
-          new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16))),
-          'AES-CBC',
-          false,
-          ['encrypt']
-        );
-        const iv = crypto.getRandomValues(new Uint8Array(16));
-        const encrypted = await crypto.subtle.encrypt(
-          { name: 'AES-CBC', iv },
-          key,
-          new TextEncoder().encode(text)
-        );
-        return btoa([...iv, ...new Uint8Array(encrypted)].map(b => String.fromCharCode(b)).join(''));
-      } catch (err) {
-        console.error("Encryption error:", err);
-        throw err;
-      }
-    }
+
+// Helper functions remain the same
+function generateRandomHex(len) {
+  return Array.from(crypto.getRandomValues(new Uint8Array(len)))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function encryptText(text, hexKey) {
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16)),
+      'AES-CBC',
+      false,
+      ['encrypt']
+    );
+    const iv = crypto.getRandomValues(new Uint8Array(16));
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-CBC', iv },
+      key,
+      new TextEncoder().encode(text)
+    );
+    return btoa([...iv, ...new Uint8Array(encrypted)].map(b => String.fromCharCode(b)).join(''));
+  } catch (err) {
+    console.error("Encryption error:", err);
+    throw err;
+  }
+}
 
     // In res-webapp.html
     async function completeNfcRegistration(authData) {
