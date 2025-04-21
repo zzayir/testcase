@@ -528,15 +528,16 @@ function prepareStep4ForMobile() {
   document.getElementById('nfc-unsupported-options').classList.remove('hidden');
 }
 
-    async function proceedWithoutNfc() {
+ async function proceedWithoutNfc() {
   const username = document.getElementById('username').value.trim();
-  const btn = document.querySelector('#step4 .btn');
+  const statusEl = document.getElementById('nfc-status');
   
-  btn.disabled = true;
-  showStatus('Processing registration...', 'info');
+  statusEl.textContent = 'Finalizing registration...';
+  statusEl.className = 'message info';
 
   try {
-    const response = await fetch('/api/register', {
+    // 1. Complete registration
+    const regResponse = await fetch('/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -548,21 +549,35 @@ function prepareStep4ForMobile() {
       })
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Registration failed');
+    const regData = await regResponse.json();
+    console.log('Registration response:', regData);
+
+    if (!regResponse.ok) {
+      throw new Error(regData.error || 'Registration failed');
     }
 
-    // Verify user exists before proceeding
-    const verification = await fetch(`/api/verify-user?username=${username}`);
-    if (!verification.ok) {
-      throw new Error('User registration verification failed');
+    // 2. Verify user exists before proceeding
+    const verifyResponse = await fetch(`/api/verify-user?username=${username}`);
+    const verifyData = await verifyResponse.json();
+    console.log('Verification response:', verifyData);
+
+    if (!verifyResponse.ok || !verifyData.exists) {
+      throw new Error('Registration verification failed');
     }
 
     nextSection('final');
   } catch (err) {
-    showStatus('Error: ' + err.message, 'error');
-    btn.disabled = false;
+    statusEl.textContent = 'Error: ' + err.message;
+    statusEl.className = 'message error';
+    console.error('Registration Error:', err);
+    
+    // Show retry button
+    const retryBtn = document.createElement('button');
+    retryBtn.textContent = 'Retry Registration';
+    retryBtn.className = 'btn';
+    retryBtn.onclick = proceedWithoutNfc;
+    statusEl.appendChild(document.createElement('br'));
+    statusEl.appendChild(retryBtn);
   }
 }
 
