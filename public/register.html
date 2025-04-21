@@ -528,41 +528,49 @@ function prepareStep4ForMobile() {
   document.getElementById('nfc-unsupported-options').classList.remove('hidden');
 }
 
-    function proceedWithoutNfc() {
-      const data = {
-        username: document.getElementById('username').value.trim(),
+    async function proceedWithoutNfc() {
+  const username = document.getElementById('username').value.trim();
+  const btn = document.querySelector('#step4 .btn');
+  
+  btn.disabled = true;
+  showStatus('Processing registration...', 'info');
+
+  try {
+    const response = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username,
         email: document.getElementById('email').value.trim(),
         password: document.getElementById('password').value,
         mobileNumber: fullNumber,
         authData: null
-      };
-
-      // Show loading state
-      const btn = document.querySelector('#step4 .btn') || document.querySelector('#step3 .btn');
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = 'Processing...';
-      }
-
-      fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
       })
-      .then(response => {
-        if (!response.ok) throw new Error('Registration failed');
-        nextSection('final');
-      })
-      .catch(err => {
-        console.error("Registration error:", err);
-        showError('nfc-status', 'Error: ' + err.message);
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = 'Scan NFC Tag';
-        }
-      });
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Registration failed');
     }
 
+    // Verify user exists before proceeding
+    const verification = await fetch(`/api/verify-user?username=${username}`);
+    if (!verification.ok) {
+      throw new Error('User registration verification failed');
+    }
+
+    nextSection('final');
+  } catch (err) {
+    showStatus('Error: ' + err.message, 'error');
+    btn.disabled = false;
+  }
+}
+
+function showStatus(message, type) {
+  const statusEl = document.getElementById('nfc-status');
+  statusEl.textContent = message;
+  statusEl.className = `message ${type}`;
+}
     // NFC Functions
 async function scanNFC() {
   const nfcStatus = document.getElementById('nfc-status');
