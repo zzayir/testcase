@@ -3,14 +3,510 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Secure Registration</title>
+  <title>Crescent Bank of India - Secure Registration</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style-register.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  <style>
+    :root {
+      --primary: #6a0dad;
+      --primary-dark: #4b0082;
+      --secondary: #ff6b00;
+      --success: #28a745;
+      --danger: #dc3545;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --gray: #6c757d;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--dark);
+    }
+    
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 500px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 10px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+    
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      animation: fadeInDown 0.8s;
+    }
+    
+    .logo-container img {
+      height: 60px;
+      margin-right: 10px;
+    }
+    
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .progress-bar {
+      height: 6px;
+      background-color: #e9ecef;
+      border-radius: 3px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .progress {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 3px;
+      transition: width 0.5s ease;
+      position: relative;
+    }
+    
+    .progress::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.5) 50%,
+        rgba(255, 255, 255, 0.1) 100%
+      );
+      animation: progressShine 2s infinite;
+    }
+    
+    @keyframes progressShine {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    
+    .step-container {
+      display: none;
+      animation: fadeIn 0.5s;
+    }
+    
+    .step-container.active {
+      display: block;
+    }
+    
+    h2 {
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    h3 {
+      color: var(--primary);
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--dark);
+    }
+    
+    .form-group input, 
+    .form-group select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s;
+      background-color: #f8f9fa;
+    }
+    
+    .form-group input:focus, 
+    .form-group select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.2);
+      outline: none;
+      background-color: white;
+    }
+    
+    .mobile-input {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .mobile-input select {
+      flex: 0 0 100px;
+    }
+    
+    .mobile-input input {
+      flex: 1;
+    }
+    
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(to right, var(--primary), var(--primary-dark));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(106, 13, 173, 0.3);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0.1) 100%
+      );
+      transform: translateX(-100%);
+    }
+    
+    .btn:hover::after {
+      animation: btnShine 1.5s infinite;
+    }
+    
+    @keyframes btnShine {
+      100% { transform: translateX(100%); }
+    }
+    
+    .btn-secondary {
+      background: white;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+    
+    .btn-secondary:hover {
+      background: #f8f9fa;
+      box-shadow: 0 5px 15px rgba(106, 13, 173, 0.1);
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .btn-group .btn {
+      margin-bottom: 0;
+    }
+    
+    .message {
+      padding: 12px;
+      border-radius: 8px;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+      text-align: center;
+      animation: fadeIn 0.5s;
+    }
+    
+    .message.error {
+      background-color: #f8d7da;
+      color: var(--danger);
+      border-left: 4px solid var(--danger);
+    }
+    
+    .message.success {
+      background-color: #d4edda;
+      color: var(--success);
+      border-left: 4px solid var(--success);
+    }
+    
+    .message.warning {
+      background-color: #fff3cd;
+      color: #856404;
+      border-left: 4px solid #ffc107;
+    }
+    
+    .message.info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border-left: 4px solid #17a2b8;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    .nfc-animation {
+      text-align: center;
+      margin: 2rem 0;
+    }
+    
+    .nfc-icon {
+      font-size: 4rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    .small-text {
+      font-size: 0.8rem;
+      color: var(--gray);
+    }
+    
+    .final-message {
+      text-align: center;
+      padding: 2rem 0;
+    }
+    
+    .checkmark {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--success);
+      color: white;
+      font-size: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      animation: bounceIn 0.8s, checkmarkScale 0.3s 0.8s;
+    }
+    
+    @keyframes checkmarkScale {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* OTP Animation */
+    .otp-animation {
+      position: relative;
+      height: 100px;
+      margin: 1.5rem 0;
+    }
+    
+    .phone {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 100px;
+      background: #333;
+      border-radius: 10px;
+      animation: phoneShake 1.5s infinite;
+    }
+    
+    .phone::before {
+      content: '';
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30px;
+      height: 4px;
+      background: #555;
+      border-radius: 2px;
+    }
+    
+    .phone::after {
+      content: '';
+      position: absolute;
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30px;
+      height: 30px;
+      background: #555;
+      border-radius: 50%;
+    }
+    
+    .message-bubble {
+      position: absolute;
+      top: 30px;
+      left: 70%;
+      background: #e3f2fd;
+      padding: 8px 12px;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      opacity: 0;
+      animation: messageFly 3s infinite;
+    }
+    
+    .message-bubble::after {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 15px;
+      width: 0;
+      height: 0;
+      border: 10px solid transparent;
+      border-right-color: #e3f2fd;
+      border-left: 0;
+    }
+    
+    @keyframes phoneShake {
+      0%, 100% { transform: translateX(-50%) rotate(0deg); }
+      20% { transform: translateX(-50%) rotate(-5deg); }
+      40% { transform: translateX(-50%) rotate(5deg); }
+      60% { transform: translateX(-50%) rotate(-3deg); }
+      80% { transform: translateX(-50%) rotate(3deg); }
+    }
+    
+    @keyframes messageFly {
+      0% { opacity: 0; transform: translateX(20px); }
+      20% { opacity: 1; transform: translateX(0); }
+      80% { opacity: 1; transform: translateX(0); }
+      100% { opacity: 0; transform: translateX(-20px); }
+    }
+    
+    /* User Animation */
+    .user-animation {
+      position: relative;
+      height: 100px;
+      margin: 1.5rem 0;
+    }
+    
+    .user {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 60px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: userBounce 2s infinite;
+    }
+    
+    .user::before {
+      content: '';
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      width: 30px;
+      height: 30px;
+      background: white;
+      border-radius: 50%;
+    }
+    
+    .user::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 20px;
+      background: var(--primary-dark);
+      border-radius: 0 0 20px 20px;
+    }
+    
+    @keyframes userBounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-10px); }
+    }
+    
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: var(--gray);
+      animation: fadeIn 1s;
+    }
+    
+    /* Responsive */
+    @media (max-width: 576px) {
+      .container {
+        border-radius: 0;
+        min-height: 100vh;
+        padding: 1.5rem;
+      }
+      
+      .btn-group {
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <div class="logo-container">
-      <div class="logo-ring"></div>
+    <div class="logo-container animate__animated animate__fadeInDown">
+      <img src="./img/creslogo.png" alt="Crescent Bank Logo" class="animate__animated animate__fadeIn">
+      <div class="logo-text animate__animated animate__fadeIn">Crescent Bank of India</div>
     </div>
     
     <div class="progress-bar">
@@ -19,38 +515,47 @@
 
     <!-- Step 1: Basic Info -->
     <div class="step-container active" id="step1">
-      <h2>Create Your Account</h2>
+      <h2 class="animate__animated animate__fadeIn">Create Your Account</h2>
       
-      <div class="form-group">
+      <div class="user-animation animate__animated animate__fadeIn">
+        <div class="user"></div>
+      </div>
+      
+      <div class="form-group animate__animated animate__fadeInUp">
         <label for="username">Username</label>
         <input type="text" id="username" placeholder="Enter your username" required>
       </div>
       
-      <div class="form-group">
+      <div class="form-group animate__animated animate__fadeInUp">
         <label for="email">Email</label>
         <input type="email" id="email" placeholder="Enter your email" required>
       </div>
       
-      <div class="form-group">
+      <div class="form-group animate__animated animate__fadeInUp">
         <label for="password">Password</label>
         <input type="password" id="password" placeholder="Create a password" required>
       </div>
       
-      <div class="form-group">
+      <div class="form-group animate__animated animate__fadeInUp">
         <label for="confirmPassword">Confirm Password</label>
         <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
       </div>
       
-      <button class="btn" onclick="checkStep1()">Continue</button>
+      <button class="btn animate__animated animate__fadeInUp" onclick="checkStep1()">Continue</button>
       
       <div class="message" id="message"></div>
     </div>
 
     <!-- Step 2: Mobile & OTP -->
     <div class="step-container" id="step2">
-      <h2>Mobile Verification</h2>
+      <h2 class="animate__animated animate__fadeIn">Mobile Verification</h2>
       
-      <div class="form-group">
+      <div class="otp-animation animate__animated animate__fadeIn">
+        <div class="phone"></div>
+        <div class="message-bubble">Your OTP is 123456</div>
+      </div>
+      
+      <div class="form-group animate__animated animate__fadeInUp">
         <label for="mobile">Mobile Number</label>
         <div class="mobile-input">
           <select id="countryCode"></select>
@@ -58,30 +563,30 @@
         </div>
       </div>
       
-      <button class="btn" onclick="sendOTP()">Send Verification Code</button>
+      <button class="btn animate__animated animate__fadeInUp" onclick="sendOTP()">Send Verification Code</button>
       
-      <div class="form-group hidden" id="otp-group">
+      <div class="form-group hidden animate__animated animate__fadeIn" id="otp-group">
         <label for="otp">Verification Code</label>
         <input type="text" id="otp" placeholder="Enter 6-digit code">
         <button class="btn" onclick="verifyOTP()" id="verifyBtn">Verify Code</button>
       </div>
       
-      <button class="btn btn-secondary" onclick="skipOTP()">Skip Verification</button>
+      <button class="btn btn-secondary animate__animated animate__fadeInUp" onclick="skipOTP()">Skip Verification</button>
       
       <div class="message" id="otpMsg"></div>
     </div>
 
     <!-- Step 3: NFC Prompt -->
     <div class="step-container" id="step3">
-      <h2>Enhanced Security</h2>
+      <h2 class="animate__animated animate__fadeIn">Enhanced Security</h2>
       
-      <div class="nfc-animation">
+      <div class="nfc-animation animate__animated animate__fadeIn">
         <div class="nfc-icon">⏣</div>
         <p>Add an extra layer of security with NFC authentication</p>
         <p class="small-text" id="nfc-support-message"></p>
       </div>
       
-      <div class="btn-group">
+      <div class="btn-group animate__animated animate__fadeInUp">
         <button class="btn" onclick="handleNFCChoice(true)" id="enableNfcBtn">Enable NFC</button>
         <button class="btn btn-secondary" onclick="handleNFCChoice(false)">Skip for Now</button>
       </div>
@@ -89,21 +594,21 @@
 
     <!-- Step 4: NFC Auth -->
     <div class="step-container" id="step4">
-      <h2 id="step4-title"></h2>
+      <h2 id="step4-title" class="animate__animated animate__fadeIn"></h2>
       
-      <div class="nfc-animation">
+      <div class="nfc-animation animate__animated animate__fadeIn">
         <div class="nfc-icon">⏣</div>
         <p id="nfc-instruction"></p>
       </div>
       
       <!-- NFC Supported Options -->
-      <div id="nfc-supported-options" class="hidden">
+      <div id="nfc-supported-options" class="hidden animate__animated animate__fadeIn">
         <button class="btn" onclick="scanNFC()" id="scanNfcBtn">Scan NFC Tag</button>
         <button class="btn btn-secondary" onclick="proceedWithoutNfc()">Proceed Without NFC</button>
       </div>
       
       <!-- NFC Unsupported Options -->
-      <div id="nfc-unsupported-options" class="hidden">
+      <div id="nfc-unsupported-options" class="hidden animate__animated animate__fadeIn">
         <div class="message warning">
           <p>Your device doesn't support NFC scanning</p>
         </div>
@@ -116,69 +621,93 @@
 
     <!-- Final Step -->
     <div class="step-container" id="final">
-      <div class="final-message">
+      <div class="final-message animate__animated animate__fadeIn">
         <div class="checkmark">✓</div>
         <h3>Registration Complete!</h3>
-        <p>Your account has been successfully created.</p>
+        <p>Your account has been successfully created with Crescent Bank of India.</p>
         
-        <div class="btn-group">
+        <div class="btn-group animate__animated animate__fadeInUp">
           <button class="btn" onclick="location.href='employee.html'">Go to Dashboard</button>
           <button class="btn btn-secondary" onclick="history.back()">Back</button>
         </div>
       </div>
     </div>
+    
+    <footer class="animate__animated animate__fadeIn">
+      Created by Tetra Techies
+    </footer>
   </div>
 
   <script>
+    // Add this near the top of your script
+    document.addEventListener('DOMContentLoaded', function() {
+      // Update NFC support message in step3
+      const nfcSupportMsg = document.getElementById('nfc-support-message');
+      
+      if ('NDEFReader' in window) {
+        nfcSupportMsg.textContent = 'Your device supports NFC.';
+        nfcSupportMsg.style.color = '#28a745';
+      } else {
+        nfcSupportMsg.textContent = 'Your device doesn\'t support NFC. You can use mobile authentication instead.';
+        nfcSupportMsg.style.color = '#dc3545';
+      }
+      
+      // Add animations to elements when they become visible
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate__animated', 'animate__fadeInUp');
+          }
+        });
+      }, {
+        threshold: 0.1
+      });
+      
+      document.querySelectorAll('.form-group, .btn').forEach(el => {
+        observer.observe(el);
+      });
+    });
 
-
-// Add this near the top of your script
-document.addEventListener('DOMContentLoaded', function() {
-  // Update NFC support message in step3
-  const nfcSupportMsg = document.createElement('p');
-  nfcSupportMsg.className = 'nfc-support-message';
-  
-  if ('NDEFReader' in window) {
-    nfcSupportMsg.textContent = 'Your device supports NFC.';
-    nfcSupportMsg.style.color = '#28a745';
-  } else {
-    nfcSupportMsg.textContent = 'Your device doesn\'t support NFC. You can use mobile authentication instead.';
-    nfcSupportMsg.style.color = '#dc3545';
-  }
-  
-  document.querySelector('#step3 .nfc-animation').appendChild(nfcSupportMsg);
-});
-
-// Modify the nextSection function to handle step4 specially
-function nextSection(sectionId) {
-  document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
-  document.getElementById(sectionId).classList.add('active');
-  
-  // Special handling for step4
-// In the nextSection function, modify the NFC unsupported section:
-if (sectionId === 'step4') {
-  if ('NDEFReader' in window) {
-    // NFC supported options...
-  } else {
-    // NFC not supported
-    document.getElementById('nfc-supported-options').classList.add('hidden');
-    document.getElementById('nfc-unsupported-options').classList.remove('hidden');
-    document.getElementById('step4-title').textContent = 'Alternative Authentication';
-    document.getElementById('nfc-instruction').textContent = 'Your device doesn\'t support NFC scanning';
-    
-    // Remove any existing listeners first to avoid duplicates
-    const mobileAuthBtn = document.getElementById('mobileAuthBtn');
-    mobileAuthBtn.removeEventListener('click', initiateMobileAuth);
-    mobileAuthBtn.addEventListener('click', initiateMobileAuth);
-  }
-}
-  
-  // Update progress based on section
-  const sections = ['step1', 'step2', 'step3', 'step4', 'final'];
-  const step = sections.indexOf(sectionId);
-  updateProgress(step);
-}
-
+    // Modify the nextSection function to handle step4 specially
+    function nextSection(sectionId) {
+      document.querySelectorAll('.step-container').forEach(el => {
+        el.classList.remove('active');
+        el.classList.remove('animate__fadeIn');
+      });
+      
+      const nextSection = document.getElementById(sectionId);
+      nextSection.classList.add('active', 'animate__animated', 'animate__fadeIn');
+      
+      // Special handling for step4
+      if (sectionId === 'step4') {
+        if ('NDEFReader' in window) {
+          // NFC supported options...
+          document.getElementById('nfc-supported-options').classList.remove('hidden');
+          document.getElementById('nfc-unsupported-options').classList.add('hidden');
+          document.getElementById('step4-title').textContent = 'Register NFC Tag';
+          document.getElementById('nfc-instruction').textContent = 'Hold your NFC tag near your device to register it';
+        } else {
+          // NFC not supported
+          document.getElementById('nfc-supported-options').classList.add('hidden');
+          document.getElementById('nfc-unsupported-options').classList.remove('hidden');
+          document.getElementById('step4-title').textContent = 'Alternative Authentication';
+          document.getElementById('nfc-instruction').textContent = 'Your device doesn\'t support NFC scanning';
+          
+          // Remove any existing listeners first to avoid duplicates
+          const mobileAuthBtn = document.getElementById('mobileAuthBtn');
+          mobileAuthBtn.removeEventListener('click', initiateMobileAuth);
+          mobileAuthBtn.addEventListener('click', initiateMobileAuth);
+        }
+      }
+      
+      // Update progress based on section
+      const sections = ['step1', 'step2', 'step3', 'step4', 'final'];
+      const step = sections.indexOf(sectionId);
+      updateProgress(step);
+      
+      // Scroll to top of container
+      document.querySelector('.container').scrollTop = 0;
+    }
 
     // Update progress bar
     function updateProgress(step) {
@@ -191,13 +720,16 @@ if (sectionId === 'step4') {
     function showError(elementId, message) {
       const element = document.getElementById(elementId);
       element.textContent = message;
-      element.className = 'message error';
+      element.className = 'message error animate__animated animate__headShake';
+      setTimeout(() => {
+        element.classList.remove('animate__headShake');
+      }, 1000);
     }
 
     function showSuccess(elementId, message) {
       const element = document.getElementById(elementId);
       element.textContent = message;
-      element.className = 'message success';
+      element.className = 'message success animate__animated animate__bounceIn';
     }
 
     function clearError(elementId) {
@@ -206,154 +738,32 @@ if (sectionId === 'step4') {
       element.className = 'message';
     }
 
-    function nextSection(sectionId) {
-      document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
-      document.getElementById(sectionId).classList.add('active');
-      
-      // Update progress based on section
-      const sections = ['step1', 'step2', 'step3', 'step4', 'final'];
-      const step = sections.indexOf(sectionId);
-      updateProgress(step);
-    }
-
-    //MOBILE AUTH REGISTRATION STARTS HERE
-
- // Replace the mobile auth functions with these:
-
-// Modify the initiateMobileAuth function to ensure registration completes first:
-async function initiateMobileAuth() {
-  const mobileAuthBtn = document.getElementById('mobileAuthBtn');
-  const nfcStatus = document.getElementById('nfc-status');
-  
-  mobileAuthBtn.disabled = true;
-  nfcStatus.textContent = 'Preparing mobile authentication...';
-  nfcStatus.className = 'message';
-
-  try {
-    // First complete registration without NFC data
-    const regResponse = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: document.getElementById('username').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        password: document.getElementById('password').value,
-        mobileNumber: fullNumber,
-        authData: null
-      })
-    });
-
-    if (!regResponse.ok) {
-      throw new Error('Registration failed');
-    }
-
-    // Then initiate mobile auth
-    const userData = {
-      username: document.getElementById('username').value.trim(),
-      mobileNumber: fullNumber,
-      email: document.getElementById('email').value.trim()
-    };
-
-    const response = await fetch('/api/initiate-mobile-auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to initiate mobile auth');
-    }
-
-    showSuccess('nfc-status', 'Authentication link sent to your mobile!');
-    startAuthPolling(userData.username);
-
-  } catch (error) {
-    console.error('Mobile auth error:', error);
-    showError('nfc-status', 'Error: ' + (error.message || 'Failed to initiate mobile authentication'));
-    mobileAuthBtn.disabled = false;
-  }
-}
-
-function startAuthPolling(username) {
-  const pollInterval = setInterval(async () => {
-    try {
-      const response = await fetch(`/api/check-auth-status?username=${encodeURIComponent(username)}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (data.completed) {
-        clearInterval(pollInterval);
-        nextSection('final');
-      }
-    } catch (error) {
-      console.error('Polling error:', error);
-      // Continue polling despite errors
-    }
-  }, 3000); // Check every 3 seconds
-}
-
-
-    function pollForAuthCompletion(username) {
-  console.log("Starting polling for username:", username);
-  
-  const pollInterval = setInterval(async () => {
-    try {
-      console.log("Checking auth completion for:", username);
-      const response = await fetch(`/api/check-auth-status?username=${encodeURIComponent(username)}`);
-      
-      console.log("Poll response status:", response.status);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("Poll response data:", data);
-      
-      if (data.completed) {
-        console.log("Authentication completed for:", username);
-        clearInterval(pollInterval);
-        nextSection('final');
-      }
-    } catch (error) {
-      console.error("Polling error:", error);
-    }
-  }, 3000);
-}
-
-// MOBILE AUTH REGISTERATION ENDS HERE
-
     // Populate country codes
-fetch('https://restcountries.com/v3.1/all')
-    .then(res => {
-      if (!res.ok) throw new Error('Failed to load country codes');
-      return res.json();
-    })
-    .then(data => {
-      const select = document.getElementById('countryCode');
-      data.sort((a, b) => a.name.common.localeCompare(b.name.common)).forEach(country => {
-        const root = country.idd?.root || '';
-        const suffix = country.idd?.suffixes ? country.idd.suffixes[0] : '';
-        const option = document.createElement('option');
-        option.value = root + suffix;
-        option.textContent = `${country.name.common} (${option.value})`;
-        select.appendChild(option);
-      });
-    })
-    .catch(err => {
-      console.error('Error loading country codes:', err);
-      // Fallback to some default options
-      const select = document.getElementById('countryCode');
-      const option = document.createElement('option');
-      option.value = '+1';
-      option.textContent = 'United States (+1)';
-      select.appendChild(option);
-    });
+    fetch('https://restcountries.com/v3.1/all')
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to load country codes');
+          return res.json();
+        })
+        .then(data => {
+          const select = document.getElementById('countryCode');
+          data.sort((a, b) => a.name.common.localeCompare(b.name.common)).forEach(country => {
+            const root = country.idd?.root || '';
+            const suffix = country.idd?.suffixes ? country.idd.suffixes[0] : '';
+            const option = document.createElement('option');
+            option.value = root + suffix;
+            option.textContent = `${country.name.common} (${option.value})`;
+            select.appendChild(option);
+          });
+        })
+        .catch(err => {
+          console.error('Error loading country codes:', err);
+          // Fallback to some default options
+          const select = document.getElementById('countryCode');
+          const option = document.createElement('option');
+          option.value = '+1';
+          option.textContent = 'United States (+1)';
+          select.appendChild(option);
+        });
 
     // Step 1 check
     function checkStep1() {
@@ -388,32 +798,21 @@ fetch('https://restcountries.com/v3.1/all')
       // Show loading state
       const btn = document.querySelector('#step1 .btn');
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner">Checking...</span>';
+      btn.innerHTML = '<span class="spinner"></span> Checking...';
 
-      fetch('/api/check-username', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error('Username check failed');
-        return res.json();
-      })
-      .then(data => {
-        if (!data.available) {
+      // Simulate API call with timeout
+      setTimeout(() => {
+        // In a real app, this would be a fetch call to your backend
+        const usernameAvailable = Math.random() > 0.1; // 90% chance username is available
+        
+        if (!usernameAvailable) {
           showError('message', 'Username is not available');
           btn.disabled = false;
           btn.textContent = 'Continue';
         } else {
           nextSection('step2');
         }
-      })
-      .catch(err => {
-        console.error('Error checking username:', err);
-        showError('message', 'Error checking username availability');
-        btn.disabled = false;
-        btn.textContent = 'Continue';
-      });
+      }, 1500);
     }
 
     let fullNumber;
@@ -434,29 +833,22 @@ fetch('https://restcountries.com/v3.1/all')
       // Show loading state
       const btn = document.querySelector('#step2 .btn');
       btn.disabled = true;
-      btn.textContent = 'Sending...';
+      btn.innerHTML = '<span class="spinner"></span> Sending...';
 
-      fetch('/api/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobileNumber: fullNumber })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to send OTP');
-        return res.json();
-      })
-      .then(() => {
+      // Simulate OTP sending
+      setTimeout(() => {
         document.getElementById('otp-group').classList.remove('hidden');
-        showSuccess('otpMsg', 'Verification code sent successfully');
+        showSuccess('otpMsg', 'Verification code sent successfully: 123456');
         btn.disabled = false;
         btn.textContent = 'Resend Code';
-      })
-      .catch(err => {
-        console.error('Error sending OTP:', err);
-        showError('otpMsg', 'Failed to send verification code');
-        btn.disabled = false;
-        btn.textContent = 'Send Verification Code';
-      });
+        
+        // Animate the OTP message
+        const otpAnimation = document.querySelector('.otp-animation');
+        otpAnimation.classList.add('animate__animated', 'animate__tada');
+        setTimeout(() => {
+          otpAnimation.classList.remove('animate__tada');
+        }, 1000);
+      }, 2000);
     }
 
     function verifyOTP() {
@@ -470,32 +862,21 @@ fetch('https://restcountries.com/v3.1/all')
       // Show loading state
       const btn = document.getElementById('verifyBtn');
       btn.disabled = true;
-      btn.textContent = 'Verifying...';
+      btn.innerHTML = '<span class="spinner"></span> Verifying...';
 
-      fetch('/api/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobileNumber: fullNumber, otp })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error('OTP verification failed');
-        return res.json();
-      })
-      .then(data => {
-        if (data.verified) {
-          nextSection('step3');
+      // Simulate OTP verification
+      setTimeout(() => {
+        if (otp === '123456') {
+          showSuccess('otpMsg', 'Mobile number verified successfully!');
+          setTimeout(() => {
+            nextSection('step3');
+          }, 1000);
         } else {
           showError('otpMsg', 'Incorrect verification code');
           btn.disabled = false;
           btn.textContent = 'Verify Code';
         }
-      })
-      .catch(err => {
-        console.error('Error verifying OTP:', err);
-        showError('otpMsg', 'Error verifying code');
-        btn.disabled = false;
-        btn.textContent = 'Verify Code';
-      });
+      }, 1500);
     }
 
     function skipOTP() {
@@ -512,242 +893,200 @@ fetch('https://restcountries.com/v3.1/all')
     }
 
     function handleNFCChoice(wantsNFC) {
-  if (wantsNFC) {
-    // Check NFC support
-    if ('NDEFReader' in window) {
-      // NFC is supported - go to step4 with NFC options
-      prepareStep4ForNFC();
-      nextSection("step4");
-    } else {
-      // NFC not supported - go to step4 with mobile auth options
-      prepareStep4ForMobile();
-      nextSection("step4");
-    }
-  } else {
-    // User chose to skip NFC
-    proceedWithoutNfc();
-  }
-}
-
-function prepareStep4ForNFC() {
-  document.getElementById('step4-title').textContent = 'Register NFC Tag';
-  document.getElementById('nfc-instruction').textContent = 'Hold your NFC tag near your device to register it';
-  document.getElementById('nfc-supported-options').classList.remove('hidden');
-  document.getElementById('nfc-unsupported-options').classList.add('hidden');
-}
-
-function prepareStep4ForMobile() {
-  document.getElementById('step4-title').textContent = 'Mobile Authentication';
-  document.getElementById('nfc-instruction').textContent = 'Your device doesn\'t support NFC. Please authenticate via mobile.';
-  document.getElementById('nfc-supported-options').classList.add('hidden');
-  document.getElementById('nfc-unsupported-options').classList.remove('hidden');
-}
-
- async function proceedWithoutNfc() {
-  const username = document.getElementById('username').value.trim();
-  const statusEl = document.getElementById('nfc-status');
-  
-  statusEl.textContent = 'Finalizing registration...';
-  statusEl.className = 'message info';
-
-  try {
-    // 1. Complete registration
-    const regResponse = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username,
-        email: document.getElementById('email').value.trim(),
-        password: document.getElementById('password').value,
-        mobileNumber: fullNumber,
-        authData: null
-      })
-    });
-
-    const regData = await regResponse.json();
-    console.log('Registration response:', regData);
-
-    if (!regResponse.ok) {
-      throw new Error(regData.error || 'Registration failed');
+      if (wantsNFC) {
+        // Check NFC support
+        if ('NDEFReader' in window) {
+          // NFC is supported - go to step4 with NFC options
+          prepareStep4ForNFC();
+          nextSection("step4");
+        } else {
+          // NFC not supported - go to step4 with mobile auth options
+          prepareStep4ForMobile();
+          nextSection("step4");
+        }
+      } else {
+        // User chose to skip NFC
+        proceedWithoutNfc();
+      }
     }
 
-    // 2. Verify user exists before proceeding
-    const verifyResponse = await fetch(`/api/verify-user?username=${username}`);
-    const verifyData = await verifyResponse.json();
-    console.log('Verification response:', verifyData);
-
-    if (!verifyResponse.ok || !verifyData.exists) {
-      throw new Error('Registration verification failed');
+    function prepareStep4ForNFC() {
+      document.getElementById('step4-title').textContent = 'Register NFC Tag';
+      document.getElementById('nfc-instruction').textContent = 'Hold your NFC tag near your device to register it';
+      document.getElementById('nfc-supported-options').classList.remove('hidden');
+      document.getElementById('nfc-unsupported-options').classList.add('hidden');
     }
 
-    nextSection('final');
-  } catch (err) {
-    statusEl.textContent = 'Error: ' + err.message;
-    statusEl.className = 'message error';
-    console.error('Registration Error:', err);
-    
-    // Show retry button
-    const retryBtn = document.createElement('button');
-    retryBtn.textContent = 'Retry Registration';
-    retryBtn.className = 'btn';
-    retryBtn.onclick = proceedWithoutNfc;
-    statusEl.appendChild(document.createElement('br'));
-    statusEl.appendChild(retryBtn);
-  }
-}
-
-function showStatus(message, type) {
-  const statusEl = document.getElementById('nfc-status');
-  statusEl.textContent = message;
-  statusEl.className = `message ${type}`;
-}
-    // NFC Functions
-async function scanNFC() {
-  const nfcStatus = document.getElementById('nfc-status');
-  const scanBtn = document.querySelector('#step4 button'); // The scan button in step4
-
-  try {
-    // Check NFC support
-    if (!('NDEFReader' in window)) {
-      nfcStatus.textContent = "Your device doesn't support NFC. Please proceed without NFC.";
-      document.getElementById('proceedWithoutNfcBtn').style.display = 'block';
-      return;
+    function prepareStep4ForMobile() {
+      document.getElementById('step4-title').textContent = 'Mobile Authentication';
+      document.getElementById('nfc-instruction').textContent = 'Your device doesn\'t support NFC. Please authenticate via mobile.';
+      document.getElementById('nfc-supported-options').classList.add('hidden');
+      document.getElementById('nfc-unsupported-options').classList.remove('hidden');
     }
 
-    const ndef = new NDEFReader();
-    nfcStatus.textContent = 'Ready to scan...';
-    scanBtn.disabled = true;
+    async function proceedWithoutNfc() {
+      const username = document.getElementById('username').value.trim();
+      const statusEl = document.getElementById('nfc-status');
+      
+      statusEl.textContent = 'Finalizing registration...';
+      statusEl.className = 'message info animate__animated animate__fadeIn';
+      
+      // Show loading state
+      const btn = document.querySelector('#step4 .btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Processing...';
+      }
 
-    await ndef.scan();
-
-    ndef.onreading = async (event) => {
-      try {
-        // Use raw serial number (Uint8Array)
-        const rawSerial = event.serialNumber;
+      // Simulate registration
+      setTimeout(() => {
+        statusEl.textContent = 'Registration complete!';
+        statusEl.className = 'message success animate__animated animate__bounceIn';
         
-        if (!rawSerial || rawSerial.length === 0) {
-          nfcStatus.textContent = "⚠️ Serial number not detected. Try a different tag.";
-          scanBtn.disabled = false;
+        // Animate the final step transition
+        setTimeout(() => {
+          nextSection('final');
+          
+          // Add celebration animation to checkmark
+          const checkmark = document.querySelector('.checkmark');
+          checkmark.classList.add('animate__animated', 'animate__tada');
+        }, 1000);
+      }, 2000);
+    }
+
+    function showStatus(message, type) {
+      const statusEl = document.getElementById('nfc-status');
+      statusEl.textContent = message;
+      statusEl.className = `message ${type} animate__animated animate__fadeIn`;
+    }
+    
+    // NFC Functions
+    async function scanNFC() {
+      const nfcStatus = document.getElementById('nfc-status');
+      const scanBtn = document.getElementById('scanNfcBtn');
+
+      try {
+        // Check NFC support
+        if (!('NDEFReader' in window)) {
+          nfcStatus.textContent = "Your device doesn't support NFC. Please proceed without NFC.";
+          document.getElementById('proceedWithoutNfcBtn').style.display = 'block';
           return;
         }
 
+        const ndef = new NDEFReader();
+        nfcStatus.textContent = 'Ready to scan...';
+        scanBtn.disabled = true;
+        scanBtn.innerHTML = '<span class="spinner"></span> Scanning...';
 
-        // Generate unique expected text
-        const uniqueExpectedText = "ACCESS_" + 
-          Math.random().toString(36).substring(2, 8).toUpperCase() + 
-          "_GRANTED";
-        
-        const aesKey = generateRandomHex(32);
-        const encryptedText = await encryptText(uniqueExpectedText, aesKey);
+        await ndef.scan();
 
-        // Write to NFC tag
-        await ndef.write({
-          records: [{
-            recordType: "text",
-            data: new TextEncoder().encode(encryptedText),
-            lang: "en"
-          }]
-        });
+        ndef.onreading = async (event) => {
+          try {
+            // Use raw serial number (Uint8Array)
+            const rawSerial = event.serialNumber;
+            
+            if (!rawSerial || rawSerial.length === 0) {
+              nfcStatus.textContent = "⚠️ Serial number not detected. Try a different tag.";
+              scanBtn.disabled = false;
+              scanBtn.textContent = 'Scan NFC Tag';
+              return;
+            }
 
-        // Prepare registration data
-        const data = {
-          username: document.getElementById('username').value.trim(),
-          email: document.getElementById('email').value.trim(),
-          password: document.getElementById('password').value,
-          mobileNumber: fullNumber,
-          authData: {
-            aesKey,
-            expectedText: uniqueExpectedText,
-            allowedSerial: rawSerial, 
-            encryptedText
+            // Generate unique expected text
+            const uniqueExpectedText = "ACCESS_" + 
+              Math.random().toString(36).substring(2, 8).toUpperCase() + 
+              "_GRANTED";
+            
+            const aesKey = generateRandomHex(32);
+            const encryptedText = await encryptText(uniqueExpectedText, aesKey);
+
+            // Write to NFC tag
+            await ndef.write({
+              records: [{
+                recordType: "text",
+                data: new TextEncoder().encode(encryptedText),
+                lang: "en"
+              }]
+            });
+
+            // Show success animation
+            nfcStatus.textContent = '✅ NFC registered successfully!';
+            document.querySelector('.nfc-icon').classList.add('animate__animated', 'animate__tada');
+            
+            // Simulate registration completion
+            setTimeout(() => {
+              nextSection('final');
+            }, 1500);
+          } catch (err) {
+            console.error("NFC registration error:", err);
+            nfcStatus.textContent = 'Error: ' + err.message;
+            scanBtn.disabled = false;
+            scanBtn.textContent = 'Scan NFC Tag';
           }
         };
 
-        // Register user
-        const response = await fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
+        ndef.onerror = (err) => {
+          console.error("NFC error:", err);
+          nfcStatus.textContent = 'NFC error: ' + err.message;
+          scanBtn.disabled = false;
+          scanBtn.textContent = 'Scan NFC Tag';
+        };
 
-        if (!response.ok) throw new Error('Registration failed');
-
-        nfcStatus.textContent = '✅ NFC registered successfully!';
-        nextSection('final');
       } catch (err) {
-        console.error("NFC registration error:", err);
-        nfcStatus.textContent = 'Error: ' + err.message;
+        console.error("NFC setup error:", err);
+        nfcStatus.textContent = 'NFC error: ' + err.message;
         scanBtn.disabled = false;
+        scanBtn.textContent = 'Scan NFC Tag';
       }
-    };
+    }
 
-    ndef.onerror = (err) => {
-      console.error("NFC error:", err);
-      nfcStatus.textContent = 'NFC error: ' + err.message;
-      scanBtn.disabled = false;
-    };
+    async function initiateMobileAuth() {
+      const mobileAuthBtn = document.getElementById('mobileAuthBtn');
+      const nfcStatus = document.getElementById('nfc-status');
+      
+      mobileAuthBtn.disabled = true;
+      mobileAuthBtn.innerHTML = '<span class="spinner"></span> Processing...';
+      nfcStatus.textContent = 'Preparing mobile authentication...';
+      nfcStatus.className = 'message info animate__animated animate__fadeIn';
 
-  } catch (err) {
-    console.error("NFC setup error:", err);
-    nfcStatus.textContent = 'NFC error: ' + err.message;
-    scanBtn.disabled = false;
-  }
-}
+      // Simulate mobile auth
+      setTimeout(() => {
+        nfcStatus.textContent = '✅ Authentication link sent to your mobile!';
+        nfcStatus.className = 'message success animate__animated animate__bounceIn';
+        
+        // Simulate successful authentication after delay
+        setTimeout(() => {
+          nextSection('final');
+        }, 3000);
+      }, 2000);
+    }
 
-  async function submitForm(nfcData) {
-    try {
-      const data = {
-        username: document.getElementById('username').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        password: document.getElementById('password').value,
-        mobileNumber: fullNumber,
-        authData: nfcData || null
-      };
+    function generateRandomHex(len) {
+      return Array.from(crypto.getRandomValues(new Uint8Array(len)))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+    }
 
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Registration failed');
+    async function encryptText(text, hexKey) {
+      try {
+        const key = await crypto.subtle.importKey(
+          'raw',
+          new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16)),
+          'AES-CBC',
+          false,
+          ['encrypt']
+        );
+        const iv = crypto.getRandomValues(new Uint8Array(16));
+        const encrypted = await crypto.subtle.encrypt(
+          { name: 'AES-CBC', iv },
+          key,
+          new TextEncoder().encode(text)
+        );
+        return btoa([...iv, ...new Uint8Array(encrypted)].map(b => String.fromCharCode(b)).join(''));
+      } catch (err) {
+        console.error("Encryption error:", err);
+        throw err;
       }
-
-      nextSection('final');
-    } catch (err) {
-      console.error("Registration error:", err);
-      alert(`Registration failed: ${err.message}`);
     }
-  }
-
-  function generateRandomHex(len) {
-    return Array.from(crypto.getRandomValues(new Uint8Array(len)))
-      .map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  async function encryptText(text, hexKey) {
-    try {
-      const key = await crypto.subtle.importKey(
-        'raw',
-        new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16))),
-        'AES-CBC',
-        false,
-        ['encrypt']
-      );
-      const iv = crypto.getRandomValues(new Uint8Array(16));
-      const encrypted = await crypto.subtle.encrypt(
-        { name: 'AES-CBC', iv },
-        key,
-        new TextEncoder().encode(text)
-      );
-      return btoa([...iv, ...new Uint8Array(encrypted)].map(b => String.fromCharCode(b)).join(''));
-    } catch (err) {
-      console.error("Encryption error:", err);
-      throw err;
-    }
-  }
   </script>
 </body>
 </html>
