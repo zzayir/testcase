@@ -5,335 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Secure Registration</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --primary: #4361ee;
-      --primary-dark: #3a56d4;
-      --secondary: #3f37c9;
-      --light: #f8f9fa;
-      --dark: #212529;
-      --success: #4cc9f0;
-      --danger: #f72585;
-      --warning: #f8961e;
-      --border-radius: 12px;
-      --box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-      --transition: all 0.3s ease;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      color: var(--dark);
-    }
-
-    .container {
-      max-width: 800px;
-      width: 100%;
-      background: white;
-      border-radius: var(--border-radius);
-      box-shadow: var(--box-shadow);
-      overflow: hidden;
-      position: relative;
-    }
-
-    .logo-container {
-      display: flex;
-      justify-content: center;
-      padding: 30px 0;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    }
-
-    .logo-ring {
-      width: 80px;
-      height: 80px;
-      border: 5px solid white;
-      border-radius: 50%;
-      position: relative;
-      animation: pulse 2s infinite;
-    }
-
-    .logo-ring::before {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border: 5px solid rgba(255, 255, 255, 0.5);
-      border-radius: 50%;
-      top: -10px;
-      left: -10px;
-      right: -10px;
-      bottom: -10px;
-      animation: pulse 2s infinite 0.5s;
-    }
-
-    .logo-ring::after {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border: 5px solid rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      top: -20px;
-      left: -20px;
-      right: -20px;
-      bottom: -20px;
-      animation: pulse 2s infinite 1s;
-    }
-
-    @keyframes pulse {
-      0% {
-        transform: scale(1);
-        opacity: 1;
-      }
-      50% {
-        transform: scale(1.05);
-        opacity: 0.8;
-      }
-      100% {
-        transform: scale(1);
-        opacity: 1;
-      }
-    }
-
-    .step-container {
-      padding: 30px;
-      display: none;
-      animation: fadeIn 0.5s ease;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .step-container.active {
-      display: block;
-    }
-
-    h2 {
-      color: var(--primary);
-      margin-bottom: 20px;
-      text-align: center;
-      font-weight: 600;
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-      color: var(--dark);
-    }
-
-    input, select {
-      width: 100%;
-      padding: 12px 15px;
-      border: 1px solid #ddd;
-      border-radius: var(--border-radius);
-      font-size: 16px;
-      transition: var(--transition);
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-    }
-
-    .btn {
-      display: inline-block;
-      padding: 12px 24px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: var(--border-radius);
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: var(--transition);
-      text-align: center;
-      width: 100%;
-      margin-top: 10px;
-    }
-
-    .btn:hover {
-      background: var(--primary-dark);
-      transform: translateY(-2px);
-    }
-
-    .btn-secondary {
-      background: white;
-      color: var(--primary);
-      border: 1px solid var(--primary);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(67, 97, 238, 0.1);
-    }
-
-    .btn-danger {
-      background: var(--danger);
-    }
-
-    .btn-danger:hover {
-      background: #e5177a;
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .btn-group .btn {
-      flex: 1;
-    }
-
-    .message {
-      padding: 12px;
-      border-radius: var(--border-radius);
-      margin-top: 20px;
-      font-size: 14px;
-      display: none;
-    }
-
-    .error {
-      background: rgba(247, 37, 133, 0.1);
-      color: var(--danger);
-      border: 1px solid rgba(247, 37, 133, 0.3);
-      display: block;
-    }
-
-    .success {
-      background: rgba(76, 201, 240, 0.1);
-      color: #0a9396;
-      border: 1px solid rgba(76, 201, 240, 0.3);
-      display: block;
-    }
-
-    .progress-bar {
-      height: 6px;
-      background: #e9ecef;
-      border-radius: 3px;
-      margin-bottom: 30px;
-      overflow: hidden;
-    }
-
-    .progress {
-      height: 100%;
-      background: linear-gradient(90deg, var(--primary), var(--secondary));
-      width: 0%;
-      transition: width 0.5s ease;
-    }
-
-    .mobile-input {
-      display: flex;
-      gap: 10px;
-    }
-
-    .mobile-input select {
-      flex: 0 0 100px;
-    }
-
-    .mobile-input input {
-      flex: 1;
-    }
-
-    .nfc-animation {
-      text-align: center;
-      margin: 30px 0;
-    }
-
-    .nfc-icon {
-      font-size: 60px;
-      color: var(--primary);
-      margin-bottom: 20px;
-      animation: nfcScan 2s infinite;
-    }
-
-    @keyframes nfcScan {
-      0%, 100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-10px);
-      }
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .final-message {
-      text-align: center;
-      padding: 30px 0;
-    }
-
-    .final-message .checkmark {
-      font-size: 80px;
-      color: #4bb543;
-      margin-bottom: 20px;
-      animation: checkmarkScale 0.5s ease;
-    }
-
-    @keyframes checkmarkScale {
-      0% {
-        transform: scale(0);
-      }
-      80% {
-        transform: scale(1.2);
-      }
-      100% {
-        transform: scale(1);
-      }
-    }
-
-    .final-message h3 {
-      font-size: 24px;
-      margin-bottom: 10px;
-      color: var(--primary);
-    }
-
-    .final-message p {
-      margin-bottom: 30px;
-      color: #666;
-    }
-
-    @media (max-width: 768px) {
-      .container {
-        max-width: 100%;
-      }
-      
-      .mobile-input {
-        flex-direction: column;
-      }
-      
-      .mobile-input select {
-        flex: 1;
-        width: 100%;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="style-register.css">
 </head>
 <body>
   <div class="container">
@@ -406,25 +78,38 @@
       <div class="nfc-animation">
         <div class="nfc-icon">⏣</div>
         <p>Add an extra layer of security with NFC authentication</p>
+        <p class="small-text" id="nfc-support-message"></p>
       </div>
       
       <div class="btn-group">
-        <button class="btn" onclick="handleNFCChoice(true)">Enable NFC</button>
+        <button class="btn" onclick="handleNFCChoice(true)" id="enableNfcBtn">Enable NFC</button>
         <button class="btn btn-secondary" onclick="handleNFCChoice(false)">Skip for Now</button>
       </div>
     </div>
 
     <!-- Step 4: NFC Auth -->
     <div class="step-container" id="step4">
-      <h2>Register NFC Tag</h2>
+      <h2 id="step4-title"></h2>
       
       <div class="nfc-animation">
         <div class="nfc-icon">⏣</div>
-        <p>Hold your NFC tag near your device to register it</p>
+        <p id="nfc-instruction"></p>
       </div>
       
-      <button class="btn" onclick="scanNFC()">Scan NFC Tag</button>
-      <button class="btn btn-secondary hidden" id="proceedWithoutNfcBtn" onclick="proceedWithoutNfc()">Proceed Without NFC</button>
+      <!-- NFC Supported Options -->
+      <div id="nfc-supported-options" class="hidden">
+        <button class="btn" onclick="scanNFC()" id="scanNfcBtn">Scan NFC Tag</button>
+        <button class="btn btn-secondary" onclick="proceedWithoutNfc()">Proceed Without NFC</button>
+      </div>
+      
+      <!-- NFC Unsupported Options -->
+      <div id="nfc-unsupported-options" class="hidden">
+        <div class="message warning">
+          <p>Your device doesn't support NFC scanning</p>
+        </div>
+        <button class="btn" onclick="initiateMobileAuth()" id="mobileAuthBtn">Authenticate via Mobile</button>
+        <button class="btn btn-secondary" onclick="proceedWithoutNfc()">Proceed Without NFC</button>
+      </div>
       
       <div class="message" id="nfc-status"></div>
     </div>
@@ -445,6 +130,56 @@
   </div>
 
   <script>
+
+
+// Add this near the top of your script
+document.addEventListener('DOMContentLoaded', function() {
+  // Update NFC support message in step3
+  const nfcSupportMsg = document.createElement('p');
+  nfcSupportMsg.className = 'nfc-support-message';
+  
+  if ('NDEFReader' in window) {
+    nfcSupportMsg.textContent = 'Your device supports NFC.';
+    nfcSupportMsg.style.color = '#28a745';
+  } else {
+    nfcSupportMsg.textContent = 'Your device doesn\'t support NFC. You can use mobile authentication instead.';
+    nfcSupportMsg.style.color = '#dc3545';
+  }
+  
+  document.querySelector('#step3 .nfc-animation').appendChild(nfcSupportMsg);
+});
+
+// Modify the nextSection function to handle step4 specially
+function nextSection(sectionId) {
+  document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
+  document.getElementById(sectionId).classList.add('active');
+  
+  // Special handling for step4
+// In the nextSection function, modify the NFC unsupported section:
+if (sectionId === 'step4') {
+  if ('NDEFReader' in window) {
+    // NFC supported options...
+  } else {
+    // NFC not supported
+    document.getElementById('nfc-supported-options').classList.add('hidden');
+    document.getElementById('nfc-unsupported-options').classList.remove('hidden');
+    document.getElementById('step4-title').textContent = 'Alternative Authentication';
+    document.getElementById('nfc-instruction').textContent = 'Your device doesn\'t support NFC scanning';
+    
+    // Remove any existing listeners first to avoid duplicates
+    const mobileAuthBtn = document.getElementById('mobileAuthBtn');
+    mobileAuthBtn.removeEventListener('click', initiateMobileAuth);
+    mobileAuthBtn.addEventListener('click', initiateMobileAuth);
+  }
+}
+  
+  // Update progress based on section
+  const sections = ['step1', 'step2', 'step3', 'step4', 'final'];
+  const step = sections.indexOf(sectionId);
+  updateProgress(step);
+}
+
+
     // Update progress bar
     function updateProgress(step) {
       const progress = document.getElementById('progress');
@@ -480,6 +215,104 @@
       const step = sections.indexOf(sectionId);
       updateProgress(step);
     }
+
+    //MOBILE AUTH REGISTRATION STARTS HERE
+
+    function pollForAuthCompletion(username) {
+  console.log("Starting polling for username:", username); // Debug log
+  
+  const pollInterval = setInterval(async () => {
+    try {
+      console.log("Checking auth completion..."); // Debug log
+      const response = await fetch(`http://localhost:3001/api/check-auth-completion?username=${encodeURIComponent(username)}`);
+      
+      console.log("Poll response status:", response.status); // Debug log
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Poll response data:", data); // Debug log
+      
+      if (data.completed) {
+        console.log("Authentication completed!"); // Debug log
+        clearInterval(pollInterval);
+        nextSection('final');
+      }
+    } catch (error) {
+      console.error("Polling error:", error); // Debug log
+      // Continue polling despite errors
+    }
+  }, 3000); // Check every 3 seconds
+}
+
+  async function initiateMobileAuth() {
+  console.log("Initiate mobile auth function called"); // Debug log
+  
+  const mobileAuthBtn = document.getElementById('mobileAuthBtn');
+  const nfcStatus = document.getElementById('nfc-status');
+  
+  if (!mobileAuthBtn || !nfcStatus) {
+    console.error("Could not find required elements");
+    return;
+  }
+
+  // Disable button and show loading state
+  mobileAuthBtn.disabled = true;
+  nfcStatus.textContent = 'Preparing mobile authentication...';
+  nfcStatus.className = 'message info';
+
+  try {
+    // Verify fullNumber is set
+    if (!fullNumber) {
+      throw new Error("Mobile number not set. Please complete mobile verification first.");
+    }
+
+    const userData = {
+      username: document.getElementById('username').value.trim(),
+      mobileNumber: fullNumber,
+      email: document.getElementById('email').value.trim()
+    };
+
+    console.log("Sending request with data:", userData); // Debug log
+
+    const response = await fetch('http://localhost:3001/api/initiate-mobile-auth', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    });
+
+    console.log("Received response:", response); // Debug log
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Server responded with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Show success message
+    nfcStatus.textContent = data.message || 'Authentication link sent to your mobile!';
+    nfcStatus.className = 'message success';
+    
+    // Start polling for completion
+    pollForAuthCompletion(userData.username);
+
+  } catch (error) {
+    console.error("Mobile auth error:", error); // Detailed error logging
+    nfcStatus.textContent = 'Error: ' + (error.message || 'Failed to initiate mobile authentication');
+    nfcStatus.className = 'message error';
+    mobileAuthBtn.disabled = false;
+  }
+}
+
+
+
+// MOBILE AUTH REGISTERATION ENDS HERE
 
     // Populate country codes
 fetch('https://restcountries.com/v3.1/all')
@@ -665,17 +498,36 @@ fetch('https://restcountries.com/v3.1/all')
     }
 
     function handleNFCChoice(wantsNFC) {
-      if (wantsNFC) {
-        if ('NDEFReader' in window) {
-          nextSection("step4");
-        } else {
-          document.getElementById('nfc-status').textContent = 'Your device doesn\'t support NFC.';
-          document.getElementById('proceedWithoutNfcBtn').classList.remove('hidden');
-        }
-      } else {
-        proceedWithoutNfc();
-      }
+  if (wantsNFC) {
+    // Check NFC support
+    if ('NDEFReader' in window) {
+      // NFC is supported - go to step4 with NFC options
+      prepareStep4ForNFC();
+      nextSection("step4");
+    } else {
+      // NFC not supported - go to step4 with mobile auth options
+      prepareStep4ForMobile();
+      nextSection("step4");
     }
+  } else {
+    // User chose to skip NFC
+    proceedWithoutNfc();
+  }
+}
+
+function prepareStep4ForNFC() {
+  document.getElementById('step4-title').textContent = 'Register NFC Tag';
+  document.getElementById('nfc-instruction').textContent = 'Hold your NFC tag near your device to register it';
+  document.getElementById('nfc-supported-options').classList.remove('hidden');
+  document.getElementById('nfc-unsupported-options').classList.add('hidden');
+}
+
+function prepareStep4ForMobile() {
+  document.getElementById('step4-title').textContent = 'Mobile Authentication';
+  document.getElementById('nfc-instruction').textContent = 'Your device doesn\'t support NFC. Please authenticate via mobile.';
+  document.getElementById('nfc-supported-options').classList.add('hidden');
+  document.getElementById('nfc-unsupported-options').classList.remove('hidden');
+}
 
     function proceedWithoutNfc() {
       const data = {
