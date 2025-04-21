@@ -945,12 +945,16 @@ app.post('/api/initiate-mobile-auth', async (req, res) => {
 });
 
 // Complete Mobile Authentication
+// Enhanced Complete Mobile Auth Endpoint
 app.post('/api/complete-mobile-auth', async (req, res) => {
   try {
     const { username, token, authData } = req.body;
 
+    console.log('Received auth completion request:', { username, token, authData });
+
     // Validate input
     if (!username || !token || !authData) {
+      console.log('Missing required fields');
       return res.status(400).json({ 
         success: false,
         error: 'Missing required fields' 
@@ -959,11 +963,25 @@ app.post('/api/complete-mobile-auth', async (req, res) => {
 
     // Verify token
     const session = mobileAuthSessions.get(username);
-    if (!session || session.token !== token || Date.now() > session.expiresAt) {
+    if (!session || session.token !== token) {
+      console.log('Invalid or expired token');
       return res.status(401).json({ 
         success: false,
         error: 'Invalid or expired token' 
       });
+    }
+
+    if (Date.now() > session.expiresAt) {
+      console.log('Token expired');
+      return res.status(401).json({ 
+        success: false,
+        error: 'Token expired' 
+      });
+    }
+
+    // Convert serial number if needed
+    if (authData.allowedSerial && Array.isArray(authData.allowedSerial)) {
+      authData.allowedSerial = authData.allowedSerial.join(',');
     }
 
     // Update user with NFC data
@@ -974,6 +992,7 @@ app.post('/api/complete-mobile-auth', async (req, res) => {
     );
 
     if (!updatedUser) {
+      console.log('User not found');
       return res.status(404).json({
         success: false,
         error: 'User not found'
@@ -983,6 +1002,7 @@ app.post('/api/complete-mobile-auth', async (req, res) => {
     // Clear the session
     mobileAuthSessions.delete(username);
 
+    console.log('Mobile authentication completed successfully for:', username);
     res.json({ 
       success: true,
       message: 'Mobile authentication completed successfully'
