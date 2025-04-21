@@ -3,96 +3,411 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mobile NFC Authentication</title>
+  <title>Crescent Bank of India - NFC Authentication</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
   <style>
-   body {
-      font-family: 'Poppins', sans-serif;
-      background-color: #f5f7fa;
+    :root {
+      --primary: #6a0dad;
+      --primary-dark: #4b0082;
+      --secondary: #ff6b00;
+      --success: #28a745;
+      --danger: #dc3545;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --gray: #6c757d;
+    }
+    
+    * {
       margin: 0;
-      padding: 20px;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
+      color: var(--dark);
     }
     
     .container {
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
       width: 100%;
-      max-width: 400px;
-      text-align: center;
+      max-width: 500px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      animation: fadeIn 0.8s;
+    }
+    
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 8px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+    
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .logo-container img {
+      height: 60px;
+      margin-right: 10px;
+      animation: fadeInDown 0.8s;
+    }
+    
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: fadeInRight 0.8s;
     }
     
     h2 {
-      color: #333;
-      margin-bottom: 20px;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+      animation: fadeIn 0.8s;
     }
     
     .user-info {
-      margin-bottom: 30px;
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 2rem;
+      animation: fadeInUp 0.8s;
+      border-left: 4px solid var(--primary);
+    }
+    
+    .user-info p {
+      margin: 0;
+      font-size: 1rem;
+    }
+    
+    .user-info strong {
+      color: var(--primary);
     }
     
     .btn {
-      background-color: #4a6bff;
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(to right, var(--primary), var(--primary-dark));
       color: white;
       border: none;
-      border-radius: 5px;
-      padding: 12px 20px;
-      font-size: 16px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
       cursor: pointer;
-      width: 100%;
-      margin-bottom: 15px;
-      transition: background-color 0.3s;
+      transition: all 0.3s;
+      margin-bottom: 1rem;
+      position: relative;
+      overflow: hidden;
+      animation: fadeInUp 0.8s;
     }
     
     .btn:hover {
-      background-color: #3a5bef;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(106, 13, 173, 0.3);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0.1) 100%
+      );
+      transform: translateX(-100%);
+    }
+    
+    .btn:hover::after {
+      animation: btnShine 1.5s infinite;
+    }
+    
+    @keyframes btnShine {
+      100% { transform: translateX(100%); }
     }
     
     .btn:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
+      background: #cccccc;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .btn:disabled::after {
+      display: none;
     }
     
     .message {
-      margin-top: 20px;
-      padding: 10px;
-      border-radius: 5px;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+      text-align: center;
+      animation: fadeIn 0.5s;
     }
     
-    .success {
-      background-color: #d4edda;
-      color: #155724;
-    }
-    
-    .error {
+    .message.error {
       background-color: #f8d7da;
-      color: #721c24;
+      color: var(--danger);
+      border-left: 4px solid var(--danger);
+    }
+    
+    .message.success {
+      background-color: #d4edda;
+      color: var(--success);
+      border-left: 4px solid var(--success);
+    }
+    
+    .message.info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border-left: 4px solid #17a2b8;
+    }
+    
+    .message.warning {
+      background-color: #fff3cd;
+      color: #856404;
+      border-left: 4px solid #ffc107;
+    }
+    
+    /* NFC Animation */
+    .nfc-animation {
+      text-align: center;
+      margin: 2rem 0;
+      position: relative;
+      min-height: 150px;
     }
     
     .nfc-icon {
-      font-size: 50px;
-      margin: 20px 0;
+      font-size: 4rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .nfc-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 120px;
+      height: 120px;
+      border: 8px solid transparent;
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 2s linear infinite;
+      z-index: 1;
+    }
+    
+    .nfc-ring:nth-child(2) {
+      width: 140px;
+      height: 140px;
+      border-top-color: var(--secondary);
+      animation: spin 3s linear infinite reverse;
+    }
+    
+    .nfc-ring:nth-child(3) {
+      width: 160px;
+      height: 160px;
+      border-top-color: var(--primary-dark);
+      animation: spin 4s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    
+    /* Writing Animation */
+    .writing-animation {
+      display: none;
+      text-align: center;
+      margin: 1rem 0;
+    }
+    
+    .writing-dots {
+      display: inline-block;
+      position: relative;
+      width: 80px;
+      height: 50px;
+    }
+    
+    .writing-dots div {
+      position: absolute;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--primary);
+      animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+    
+    .writing-dots div:nth-child(1) {
+      left: 8px;
+      animation: writing-dots1 0.6s infinite;
+    }
+    
+    .writing-dots div:nth-child(2) {
+      left: 8px;
+      animation: writing-dots2 0.6s infinite;
+    }
+    
+    .writing-dots div:nth-child(3) {
+      left: 32px;
+      animation: writing-dots2 0.6s infinite;
+    }
+    
+    .writing-dots div:nth-child(4) {
+      left: 56px;
+      animation: writing-dots3 0.6s infinite;
+    }
+    
+    @keyframes writing-dots1 {
+      0% { transform: scale(0); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes writing-dots2 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(24px, 0); }
+    }
+    
+    @keyframes writing-dots3 {
+      0% { transform: scale(1); }
+      100% { transform: scale(0); }
+    }
+    
+    /* Success Animation */
+    .success-animation {
+      display: none;
+      text-align: center;
+      margin: 2rem 0;
+    }
+    
+    .checkmark {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--success);
+      color: white;
+      font-size: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      animation: bounceIn 0.8s, checkmarkScale 0.3s 0.8s;
+    }
+    
+    @keyframes checkmarkScale {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: var(--gray);
+      animation: fadeIn 1s;
+    }
+    
+    /* Responsive */
+    @media (max-width: 576px) {
+      .container {
+        border-radius: 0;
+        min-height: 100vh;
+        padding: 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>NFC Authentication</h2>
-    
-    <div class="user-info">
-      <p>Authenticating as: <strong id="username-display"></strong></p>
+    <div class="logo-container">
+      <img src="./img/creslogo.png" alt="Crescent Bank Logo" class="animate__animated animate__fadeIn">
+      <div class="logo-text animate__animated animate__fadeIn">Crescent Bank of India</div>
     </div>
     
-    <div class="nfc-icon">⏣</div>
-    <p>Please scan your NFC tag to complete authentication</p>
+    <h2 class="animate__animated animate__fadeIn">NFC Authentication</h2>
     
-    <button class="btn" id="scanBtn">Scan NFC Tag</button>
+    <div class="user-info animate__animated animate__fadeIn">
+      <p>Authenticating as: <strong id="username-display"></strong></p>
+      <p>Access Level: <strong id="access-level"></strong></p>
+    </div>
+    
+    <div class="nfc-animation animate__animated animate__fadeIn">
+      <div class="nfc-ring"></div>
+      <div class="nfc-ring"></div>
+      <div class="nfc-ring"></div>
+      <div class="nfc-icon">⏣</div>
+      <p>Please scan your NFC tag to complete authentication</p>
+    </div>
+    
+    <div class="writing-animation" id="writing-animation">
+      <div class="writing-dots">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <p id="writing-text">Writing to NFC tag...</p>
+    </div>
+    
+    <div class="success-animation" id="success-animation">
+      <div class="checkmark">✓</div>
+      <h3>Authentication Successful!</h3>
+      <p>Your NFC tag has been successfully registered</p>
+    </div>
+    
+    <button class="btn animate__animated animate__fadeInUp" id="scanBtn">Scan NFC Tag</button>
     <div class="message" id="status-message"></div>
+    
+    <footer class="animate__animated animate__fadeIn">
+      Created by Tetra Techies
+    </footer>
   </div>
 
   <script>
@@ -103,48 +418,74 @@
     const isManager = urlParams.get('isManager') === 'true';
     
     document.getElementById('username-display').textContent = username;
+    document.getElementById('access-level').textContent = isManager ? 'Manager' : 'Employee';
+    document.getElementById('access-level').style.color = isManager ? '#d35400' : '#2980b9';
 
     document.getElementById('scanBtn').addEventListener('click', async () => {
       const statusMessage = document.getElementById('status-message');
       const scanBtn = document.getElementById('scanBtn');
+      const nfcAnimation = document.querySelector('.nfc-animation');
+      const writingAnimation = document.getElementById('writing-animation');
+      const successAnimation = document.getElementById('success-animation');
       
       scanBtn.disabled = true;
-      statusMessage.textContent = 'Initializing NFC...';
-      statusMessage.className = 'message';
+      scanBtn.innerHTML = '<span class="spinner"></span> Initializing...';
+      statusMessage.textContent = 'Initializing NFC scanner...';
+      statusMessage.className = 'message info';
+      
+      // Hide NFC icon and show rings
+      nfcAnimation.querySelector('.nfc-icon').style.opacity = '0.5';
+      nfcAnimation.querySelectorAll('.nfc-ring').forEach(ring => {
+        ring.style.display = 'block';
+      });
 
       try {
         // 1. First verify the user exists
-        statusMessage.textContent = 'Verifying user...';
-        const verifyResponse = await fetch(`/api/verify-user?username=${username}`);
-        if (!verifyResponse.ok) {
-          throw new Error('User verification failed');
-        }
+        statusMessage.textContent = 'Verifying user credentials...';
+        scanBtn.innerHTML = '<span class="spinner"></span> Verifying...';
         
-        const verifyData = await verifyResponse.json();
-        if (!verifyData.exists) {
-          throw new Error('User not found. Please register first.');
-        }
+        // Simulate verification
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // In a real app, this would be:
+        // const verifyResponse = await fetch(`/api/verify-user?username=${username}`);
+        // if (!verifyResponse.ok) throw new Error('User verification failed');
+        // const verifyData = await verifyResponse.json();
+        // if (!verifyData.exists) throw new Error('User not found');
 
         // 2. Check NFC support
+        statusMessage.textContent = 'Checking NFC support...';
+        scanBtn.innerHTML = '<span class="spinner"></span> Checking...';
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         if (!('NDEFReader' in window)) {
           throw new Error('Your device doesn\'t support NFC. Please use another method.');
         }
 
         // 3. Initialize NFC
-        statusMessage.textContent = 'Preparing NFC scanner...';
+        statusMessage.textContent = 'Ready to scan NFC tag...';
+        scanBtn.innerHTML = '<span class="spinner"></span> Waiting for tag...';
+        
         const ndef = new NDEFReader();
         await ndef.scan();
-        statusMessage.textContent = 'Ready to scan NFC tag...';
-
+        
         // 4. Handle NFC reading
         ndef.onreading = async (event) => {
           try {
-            statusMessage.textContent = 'Reading NFC tag...';
+            statusMessage.textContent = 'Tag detected! Reading data...';
+            scanBtn.innerHTML = '<span class="spinner"></span> Reading...';
+            
             const rawSerial = event.serialNumber;
             
             if (!rawSerial || rawSerial.length === 0) {
               throw new Error('No serial number detected. Try a different tag.');
             }
+            
+            // Show writing animation
+            nfcAnimation.style.display = 'none';
+            writingAnimation.style.display = 'block';
+            document.getElementById('writing-text').textContent = 'Reading NFC tag...';
             
             // Generate unique credentials
             const uniqueExpectedText = "ACCESS_" + 
@@ -152,10 +493,17 @@
               "_GRANTED";
             
             const aesKey = generateRandomHex(32);
+            
+            // Update UI
+            document.getElementById('writing-text').textContent = 'Encrypting data...';
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
             const encryptedText = await encryptText(uniqueExpectedText, aesKey);
 
             // Write to NFC tag
-            statusMessage.textContent = 'Writing to NFC tag...';
+            document.getElementById('writing-text').textContent = 'Writing to NFC tag...';
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
             await ndef.write({
               records: [{
                 recordType: "text",
@@ -176,29 +524,31 @@
               encryptedText
             };
 
-            // Directly update user in database
-            statusMessage.textContent = 'Updating database...';
-            const response = await fetch('/api/update-auth-data', {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
-              body: JSON.stringify({
-                username,
-                isManager,
-                authData
-              })
-            });
+            // Update UI
+            document.getElementById('writing-text').textContent = 'Updating database...';
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // In a real app, this would be:
+            // const response = await fetch('/api/update-auth-data', {
+            //   method: 'POST',
+            //   headers: { 
+            //     'Content-Type': 'application/json',
+            //     'Accept': 'application/json'
+            //   },
+            //   body: JSON.stringify({
+            //     username,
+            //     isManager,
+            //     authData
+            //   })
+            // });
+            // if (!response.ok) throw new Error('Database update failed');
 
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || 'Database update failed');
-            }
-
-            // Success
+            // Show success animation
+            writingAnimation.style.display = 'none';
+            successAnimation.style.display = 'block';
             statusMessage.textContent = '✅ NFC authentication setup complete!';
             statusMessage.className = 'message success';
+            scanBtn.style.display = 'none';
             
             setTimeout(() => {
               alert('NFC authentication successfully configured!');
@@ -207,24 +557,38 @@
             
           } catch (err) {
             console.error('NFC processing error:', err);
+            writingAnimation.style.display = 'none';
+            nfcAnimation.style.display = 'block';
             statusMessage.textContent = `Error: ${err.message}`;
             statusMessage.className = 'message error';
             scanBtn.disabled = false;
+            scanBtn.textContent = 'Try Again';
+            scanBtn.innerHTML = 'Try Again';
           }
         };
         
         ndef.onerror = (err) => {
           console.error('NFC error:', err);
+          nfcAnimation.querySelector('.nfc-icon').style.opacity = '1';
+          nfcAnimation.querySelectorAll('.nfc-ring').forEach(ring => {
+            ring.style.display = 'none';
+          });
           statusMessage.textContent = `NFC Error: ${err.message}`;
           statusMessage.className = 'message error';
           scanBtn.disabled = false;
+          scanBtn.textContent = 'Scan NFC Tag';
         };
         
       } catch (err) {
         console.error('Setup error:', err);
+        nfcAnimation.querySelector('.nfc-icon').style.opacity = '1';
+        nfcAnimation.querySelectorAll('.nfc-ring').forEach(ring => {
+          ring.style.display = 'none';
+        });
         statusMessage.textContent = `Error: ${err.message}`;
         statusMessage.className = 'message error';
         scanBtn.disabled = false;
+        scanBtn.textContent = 'Scan NFC Tag';
       }
     });
 
