@@ -103,99 +103,103 @@
     
     document.getElementById('username-display').textContent = username;
     
-    document.getElementById('scanBtn').addEventListener('click', async () => {
-      const statusMessage = document.getElementById('status-message');
-      const scanBtn = document.getElementById('scanBtn');
-      
-      scanBtn.disabled = true;
-      statusMessage.textContent = 'Ready to scan...';
-      statusMessage.className = 'message';
-      
+// Replace the existing script with this:
+
+document.getElementById('scanBtn').addEventListener('click', async () => {
+  const statusMessage = document.getElementById('status-message');
+  const scanBtn = document.getElementById('scanBtn');
+  
+  scanBtn.disabled = true;
+  statusMessage.textContent = 'Ready to scan...';
+  statusMessage.className = 'message';
+
+  try {
+    if (!('NDEFReader' in window)) {
+      throw new Error('Your device doesn\'t support NFC');
+    }
+    
+    const ndef = new NDEFReader();
+    await ndef.scan();
+    
+    ndef.onreading = async (event) => {
       try {
-        if (!('NDEFReader' in window)) {
-          throw new Error('Your device doesn\'t support NFC');
+        const rawSerial = event.serialNumber;
+        
+        if (!rawSerial || rawSerial.length === 0) {
+          throw new Error('Serial number not detected');
         }
         
-        const ndef = new NDEFReader();
+        // Generate unique expected text
+        const uniqueExpectedText = "ACCESS_" + 
+          Math.random().toString(36).substring(2, 8).toUpperCase() + 
+          "_GRANTED";
         
-        await ndef.scan();
-        
-        ndef.onreading = async (event) => {
-          try {
-            const rawSerial = event.serialNumber;
-            
-            if (!rawSerial || rawSerial.length === 0) {
-              throw new Error('Serial number not detected');
-            }
-            
-            // Generate unique expected text
-            const uniqueExpectedText = "ACCESS_" + 
-              Math.random().toString(36).substring(2, 8).toUpperCase() + 
-              "_GRANTED";
-            
-            const aesKey = generateRandomHex(32);
-            const encryptedText = await encryptText(uniqueExpectedText, aesKey);
-            
-            // Write to NFC tag
-            await ndef.write({
-              records: [{
-                recordType: "text",
-                data: new TextEncoder().encode(encryptedText),
-                lang: "en"
-              }]
-            });
-            
-            // Send data to server
-            const response = await fetch('/api/complete-mobile-auth', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                username,
-                token,
-                authData: {
-                  aesKey,
-                  expectedText: uniqueExpectedText,
-                  allowedSerial: Array.from(rawSerial),
-                  encryptedText
-                }
-              })
-            });
-            
-            if (!response.ok) {
-              throw new Error('Failed to complete authentication');
-            }
-            
-            statusMessage.textContent = '✅ Authentication successful!';
-            statusMessage.className = 'message success';
-            
-            // Show completion message
-            setTimeout(() => {
-              alert('Registration process complete. Watch your computer.');
-              window.close();
-            }, 2000);
-            
-          } catch (err) {
-            console.error('NFC processing error:', err);
-            statusMessage.textContent = 'Error: ' + err.message;
-            statusMessage.className = 'message error';
-            scanBtn.disabled = false;
-          }
+        const aesKey = generateRandomHex(32);
+        const encryptedText = await encryptText(uniqueExpectedText, aesKey);
+
+        // Write to NFC tag
+        await ndef.write({
+          records: [{
+            recordType: "text",
+            data: new TextEncoder().encode(encryptedText),
+            lang: "en"
+          }]
+        });
+
+        // Prepare auth data
+        const authData = {
+          aesKey,
+          expectedText: uniqueExpectedText,
+          allowedSerial: Array.from(rawSerial),
+          encryptedText
         };
+
+        // Complete authentication
+        const response = await fetch('/api/complete-mobile-auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            token,
+            authData
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to complete authentication');
+        }
+
+        statusMessage.textContent = '✅ Authentication successful!';
+        statusMessage.className = 'message success';
         
-        ndef.onerror = (err) => {
-          console.error('NFC error:', err);
-          statusMessage.textContent = 'NFC error: ' + err.message;
-          statusMessage.className = 'message error';
-          scanBtn.disabled = false;
-        };
+        // Show completion message
+        setTimeout(() => {
+          alert('Registration process complete. Watch your computer.');
+          window.close();
+        }, 2000);
         
       } catch (err) {
-        console.error('NFC setup error:', err);
+        console.error('NFC processing error:', err);
         statusMessage.textContent = 'Error: ' + err.message;
         statusMessage.className = 'message error';
         scanBtn.disabled = false;
       }
-    });
+    };
+    
+    ndef.onerror = (err) => {
+      console.error('NFC error:', err);
+      statusMessage.textContent = 'NFC error: ' + err.message;
+      statusMessage.className = 'message error';
+      scanBtn.disabled = false;
+    };
+    
+  } catch (err) {
+    console.error('NFC setup error:', err);
+    statusMessage.textContent = 'Error: ' + err.message;
+    statusMessage.className = 'message error';
+    scanBtn.disabled = false;
+  }
+});
     
     // Helper functions (same as in register.html)
     function generateRandomHex(len) {
