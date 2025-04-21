@@ -102,163 +102,129 @@
     const token = urlParams.get('token');
     
     document.getElementById('username-display').textContent = username;
+    
+// Replace the existing script with this:
 
-    document.getElementById('scanBtn').addEventListener('click', async () => {
-      const statusMessage = document.getElementById('status-message');
-      const scanBtn = document.getElementById('scanBtn');
-      
-      scanBtn.disabled = true;
-      statusMessage.textContent = 'Initializing...';
-      statusMessage.className = 'message';
+document.getElementById('scanBtn').addEventListener('click', async () => {
+  const statusMessage = document.getElementById('status-message');
+  const scanBtn = document.getElementById('scanBtn');
+  
+  scanBtn.disabled = true;
+  statusMessage.textContent = 'Ready to scan...';
+  statusMessage.className = 'message';
 
+  try {
+    if (!('NDEFReader' in window)) {
+      throw new Error('Your device doesn\'t support NFC');
+    }
+    
+    const ndef = new NDEFReader();
+    await ndef.scan();
+    
+    ndef.onreading = async (event) => {
       try {
-        // 1. First verify the user exists and session is valid
-        statusMessage.textContent = 'Verifying your session...';
+        const rawSerial = event.serialNumber;
         
-        const verifyResponse = await fetch(`/api/verify-user?username=${encodeURIComponent(username)}`);
-        if (!verifyResponse.ok) {
-          throw new Error('User verification failed');
+        if (!rawSerial || rawSerial.length === 0) {
+          throw new Error('Serial number not detected');
         }
         
-        const verifyData = await verifyResponse.json();
-        if (!verifyData.exists) {
-          throw new Error('Please complete registration first');
-        }
-
-        // 2. Check NFC support
-        statusMessage.textContent = 'Checking NFC support...';
+        // Generate unique expected text
+        const uniqueExpectedText = "ACCESS_" + 
+          Math.random().toString(36).substring(2, 8).toUpperCase() + 
+          "_GRANTED";
         
-        if (!('NDEFReader' in window)) {
-          throw new Error('Your device doesn\'t support NFC. Please use mobile authentication.');
-        }
+        const aesKey = generateRandomHex(32);
+        const encryptedText = await encryptText(uniqueExpectedText, aesKey);
 
-        // 3. Initialize NFC reader
-        statusMessage.textContent = 'Preparing NFC scanner...';
-        
-        const ndef = new NDEFReader();
-        await ndef.scan();
-        statusMessage.textContent = 'Ready to scan NFC tag...';
+        // Write to NFC tag
+        await ndef.write({
+          records: [{
+            recordType: "text",
+            data: new TextEncoder().encode(encryptedText),
+            lang: "en"
+          }]
+        });
 
-        // 4. Set up NFC event handlers
-        ndef.onreading = async (event) => {
-          try {
-            statusMessage.textContent = 'Processing NFC tag...';
-            
-            const rawSerial = event.serialNumber;
-            
-            if (!rawSerial || rawSerial.length === 0) {
-              throw new Error('No serial number detected. Try a different tag.');
-            }
-            
-            // Generate unique credentials
-            const uniqueExpectedText = "ACCESS_" + 
-              Math.random().toString(36).substring(2, 8).toUpperCase() + 
-              "_GRANTED";
-            
-            const aesKey = generateRandomHex(32);
-            const encryptedText = await encryptText(uniqueExpectedText, aesKey);
-
-            // Write to NFC tag
-            statusMessage.textContent = 'Writing to NFC tag...';
-            await ndef.write({
-              records: [{
-                recordType: "text",
-                data: new TextEncoder().encode(encryptedText),
-                lang: "en"
-              }]
-            });
-
-            // Prepare auth data - convert serial number to hex string
-            const serialHex = Array.from(rawSerial)
-              .map(byte => byte.toString(16).padStart(2, '0'))
-              .join(':')
-              .toUpperCase();
-
-            const authData = {
-              aesKey,
-              expectedText: uniqueExpectedText,
-              allowedSerial: serialHex,
-              encryptedText,
-              securityKeys: {
-                deactivateKey: generateRandomHex(16),
-                activateKey: generateRandomHex(16)
-              }
-            };
-
-            // Complete authentication - directly update user record
-            statusMessage.textContent = 'Saving authentication data...';
-            const response = await fetch('/api/complete-mobile-auth', {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
-              body: JSON.stringify({
-                username,
-                token,
-                authData
-              })
-            });
-
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || 'Failed to save authentication data');
-            }
-
-            // Success
-            statusMessage.textContent = '✅ NFC authentication setup complete!';
-            statusMessage.className = 'message success';
-            
-            setTimeout(() => {
-              alert('NFC authentication successfully configured!');
-              window.close();
-            }, 2000);
-            
-          } catch (err) {
-            console.error('NFC processing error:', err);
-            statusMessage.textContent = `Error: ${err.message}`;
-            statusMessage.className = 'message error';
-            scanBtn.disabled = false;
-          }
+        // Prepare auth data - convert Uint8Array to array for JSON serialization
+        const authData = {
+          aesKey,
+          expectedText: uniqueExpectedText,
+          allowedSerial: Array.from(rawSerial), // Convert Uint8Array to regular array
+          encryptedText
         };
+
+        console.log('Attempting to complete auth with:', { 
+          username, 
+          token,
+          authData 
+        });
+
+        // Complete authentication
+        const response = await fetch('/api/complete-mobile-auth', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            username,
+            token,
+            authData
+          })
+        });
+
+        const responseData = await response.json();
+        console.log('Auth response:', responseData);
+
+        if (!response.ok) {
+          throw new Error(responseData.error || 'Failed to complete authentication');
+        }
+
+        statusMessage.textContent = '✅ Authentication successful!';
+        statusMessage.className = 'message success';
         
-        ndef.onerror = (err) => {
-          console.error('NFC error:', err);
-          statusMessage.textContent = `NFC Error: ${err.message}`;
-          statusMessage.className = 'message error';
-          scanBtn.disabled = false;
-        };
+        // Show completion message
+        setTimeout(() => {
+          alert('Registration process complete. Watch your computer.');
+          window.close();
+        }, 2000);
         
       } catch (err) {
-        console.error('Setup error:', err);
-        statusMessage.textContent = `Error: ${err.message}`;
+        console.error('NFC processing error:', err);
+        statusMessage.textContent = 'Error: ' + err.message;
         statusMessage.className = 'message error';
-        
-        if (err.message.includes('doesn\'t support NFC')) {
-          // Offer alternative authentication method
-          setTimeout(() => {
-            if (confirm("Your device doesn't support NFC. Would you like to try mobile authentication instead?")) {
-              window.location.href = `/mobile-auth.html?username=${username}&token=${token}`;
-            }
-          }, 500);
-        }
-        
         scanBtn.disabled = false;
       }
-    });
-
-    // Helper functions
+    };
+    
+    ndef.onerror = (err) => {
+      console.error('NFC error:', err);
+      statusMessage.textContent = 'NFC error: ' + err.message;
+      statusMessage.className = 'message error';
+      scanBtn.disabled = false;
+    };
+    
+  } catch (err) {
+    console.error('NFC setup error:', err);
+    statusMessage.textContent = 'Error: ' + err.message;
+    statusMessage.className = 'message error';
+    scanBtn.disabled = false;
+  }
+});
+    
+    // Helper functions (same as in register.html)
     function generateRandomHex(len) {
       return Array.from(crypto.getRandomValues(new Uint8Array(len)))
         .map(b => b.toString(16).padStart(2, '0')).join('');
     }
-
+    
     async function encryptText(text, hexKey) {
       try {
         const key = await crypto.subtle.importKey(
           'raw',
-          new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16)),
-          { name: 'AES-CBC' },
+          new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16))),
+          'AES-CBC',
           false,
           ['encrypt']
         );
@@ -268,12 +234,45 @@
           key,
           new TextEncoder().encode(text)
         );
-        return btoa(String.fromCharCode(...iv, ...new Uint8Array(encrypted)));
+        return btoa([...iv, ...new Uint8Array(encrypted)].map(b => String.fromCharCode(b)).join(''));
       } catch (err) {
         console.error("Encryption error:", err);
-        throw new Error('Failed to encrypt data');
+        throw err;
       }
     }
+
+    // In res-webapp.html
+    async function completeNfcRegistration(authData) {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get('username');
+    const token = urlParams.get('token');
+
+    const response = await fetch('http://localhost:3000/api/complete-mobile-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username,
+        token,
+        authData
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to complete mobile authentication');
+    }
+
+    // Show success and close
+    document.getElementById('status-message').textContent = '✅ Authentication successful!';
+    document.getElementById('status-message').className = 'message success';
+    setTimeout(() => window.close(), 2000);
+
+  } catch (error) {
+    console.error('Completion error:', error);
+    document.getElementById('status-message').textContent = 'Error: ' + error.message;
+    document.getElementById('status-message').className = 'message error';
+  }
+}
   </script>
 </body>
 </html>
