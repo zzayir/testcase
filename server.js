@@ -1037,6 +1037,25 @@ app.get('/api/check-auth-status', async (req, res) => {
   }
 });
 
+// Add this endpoint to verify user exists
+app.get('/api/verify-user', async (req, res) => {
+  try {
+    const { username } = req.query;
+    
+    let user = await User.findOne({ username });
+    if (!user) {
+      user = await Manager.findOne({ username });
+      if (!user) {
+        return res.status(404).json({ exists: false });
+      }
+    }
+    
+    res.json({ exists: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Verification failed' });
+  }
+});
+
 // ====== MOBILE AUTH REGISTER END ======
 
 // ====== START SERVER ======
