@@ -282,6 +282,35 @@ function startAuthPolling(username) {
   }, 3000); // Check every 3 seconds
 }
 
+
+    function pollForAuthCompletion(username) {
+  console.log("Starting polling for username:", username);
+  
+  const pollInterval = setInterval(async () => {
+    try {
+      console.log("Checking auth completion for:", username);
+      const response = await fetch(`/api/check-auth-status?username=${encodeURIComponent(username)}`);
+      
+      console.log("Poll response status:", response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Poll response data:", data);
+      
+      if (data.completed) {
+        console.log("Authentication completed for:", username);
+        clearInterval(pollInterval);
+        nextSection('final');
+      }
+    } catch (error) {
+      console.error("Polling error:", error);
+    }
+  }, 3000);
+}
+
 // MOBILE AUTH REGISTERATION ENDS HERE
 
     // Populate country codes
