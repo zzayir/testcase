@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile NFC Authentication</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    
+    .user-info {
+      margin-bottom: 30px;
+    }
+    
+    .btn {
+      background-color: #4a6bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 15px;
+      transition: background-color 0.3s;
+    }
+    
+    .btn:hover {
+      background-color: #3a5bef;
+    }
+    
+    .btn:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    .message {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    .nfc-icon {
+      font-size: 50px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>NFC Authentication</h2>
+    
+    <div class="user-info">
+      <p>Authenticating as: <strong id="username-display"></strong></p>
+    </div>
+    
+    <div class="nfc-icon">⏣</div>
+    <p>Please scan your NFC tag to complete authentication</p>
+    
+    <button class="btn" id="scanBtn">Scan NFC Tag</button>
+    <div class="message" id="status-message"></div>
+  </div>
+
+  <script>
+    // Get username from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get('username');
+    const token = urlParams.get('token');
+    
+    document.getElementById('username-display').textContent = username;
+    
+    document.getElementById('scanBtn').addEventListener('click', async () => {
+      const statusMessage = document.getElementById('status-message');
+      const scanBtn = document.getElementById('scanBtn');
+      
+      scanBtn.disabled = true;
+      statusMessage.textContent = 'Ready to scan...';
+      statusMessage.className = 'message';
+      
+      try {
+        if (!('NDEFReader' in window)) {
+          throw new Error('Your device doesn\'t support NFC');
+        }
+        
+        const ndef = new NDEFReader();
+        
+        await ndef.scan();
+        
+        ndef.onreading = async (event) => {
+          try {
+            const rawSerial = event.serialNumber;
+            
+            if (!rawSerial || rawSerial.length === 0) {
+              throw new Error('Serial number not detected');
+            }
+            
+            // Generate unique expected text
+            const uniqueExpectedText = "ACCESS_" + 
+              Math.random().toString(36).substring(2, 8).toUpperCase() + 
+              "_GRANTED";
+            
+            const aesKey = generateRandomHex(32);
+            const encryptedText = await encryptText(uniqueExpectedText, aesKey);
+            
+            // Write to NFC tag
+            await ndef.write({
+              records: [{
+                recordType: "text",
+                data: new TextEncoder().encode(encryptedText),
+                lang: "en"
+              }]
+            });
+            
+            // Send data to server
+            const response = await fetch('/api/complete-mobile-auth', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                username,
+                token,
+                authData: {
+                  aesKey,
+                  expectedText: uniqueExpectedText,
+                  allowedSerial: Array.from(rawSerial),
+                  encryptedText
+                }
+              })
+            });
+            
+            if (!response.ok) {
+              throw new Error('Failed to complete authentication');
+            }
+            
+            statusMessage.textContent = '✅ Authentication successful!';
+            statusMessage.className = 'message success';
+            
+            // Show completion message
+            setTimeout(() => {
+              alert('Registration process complete. Watch your computer.');
+              window.close();
+            }, 2000);
+            
+          } catch (err) {
+            console.error('NFC processing error:', err);
+            statusMessage.textContent = 'Error: ' + err.message;
+            statusMessage.className = 'message error';
+            scanBtn.disabled = false;
+          }
+        };
+        
+        ndef.onerror = (err) => {
+          console.error('NFC error:', err);
+          statusMessage.textContent = 'NFC error: ' + err.message;
+          statusMessage.className = 'message error';
+          scanBtn.disabled = false;
+        };
+        
+      } catch (err) {
+        console.error('NFC setup error:', err);
+        statusMessage.textContent = 'Error: ' + err.message;
+        statusMessage.className = 'message error';
+        scanBtn.disabled = false;
+      }
+    });
+    
+    // Helper functions (same as in register.html)
+    function generateRandomHex(len) {
+      return Array.from(crypto.getRandomValues(new Uint8Array(len)))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    
+    async function encryptText(text, hexKey) {
+      try {
+        const key = await crypto.subtle.importKey(
+          'raw',
+          new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16))),
+          'AES-CBC',
+          false,
+          ['encrypt']
+        );
+        const iv = crypto.getRandomValues(new Uint8Array(16));
+        const encrypted = await crypto.subtle.encrypt(
+          { name: 'AES-CBC', iv },
+          key,
+          new TextEncoder().encode(text)
+        );
+        return btoa([...iv, ...new Uint8Array(encrypted)].map(b => String.fromCharCode(b)).join(''));
+      } catch (err) {
+        console.error("Encryption error:", err);
+        throw err;
+      }
+    }
+
+    // In res-webapp.html
+    async function completeNfcRegistration(authData) {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get('username');
+    const token = urlParams.get('token');
+
+    const response = await fetch('http://localhost:3000/api/complete-mobile-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username,
+        token,
+        authData
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to complete mobile authentication');
+    }
+
+    // Show success and close
+    document.getElementById('status-message').textContent = '✅ Authentication successful!';
+    document.getElementById('status-message').className = 'message success';
+    setTimeout(() => window.close(), 2000);
+
+  } catch (error) {
+    console.error('Completion error:', error);
+    document.getElementById('status-message').textContent = 'Error: ' + error.message;
+    document.getElementById('status-message').className = 'message error';
+  }
+}
+  </script>
+</body>
+</html>
