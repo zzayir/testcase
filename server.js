@@ -706,45 +706,49 @@ app.post('/api/verify-otp', (req, res) => {
 });
 
 // Improved registration endpoint
+// In server.js - Update the registration endpoint
 app.post('/api/register', async (req, res) => {
   try {
-    const { username, email, password, mobileNumber, authData } = req.body;
+    const { username, email, password, mobileNumber } = req.body;
 
     // Validate input
     if (!username || !email || !password || !mobileNumber) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    // Check if user exists in EITHER collection
+    // Check if user exists in either collection
     const existingUser = await User.findOne({ username }) || await Manager.findOne({ username });
     if (existingUser) {
       return res.status(400).json({ error: "Username already exists" });
     }
 
-    // Create in User collection by default
+    // Create new user with additional verification
     const newUser = new User({
       username,
       email,
-      password, // Note: Should be hashed in production!
+      password, // Note: Should be hashed in production
       mobileNumber,
-      authData: authData || null
+      registeredAt: new Date() // Add registration timestamp
     });
 
+    // Save with additional verification
     await newUser.save();
+    const verifiedUser = await User.findOne({ username }).lean();
 
-    // Verify the user was actually created
-    const verifiedUser = await User.findOne({ username });
     if (!verifiedUser) {
       throw new Error("User creation verification failed");
     }
 
+    console.log('User successfully registered:', {
+      username: verifiedUser.username,
+      mobile: verifiedUser.mobileNumber,
+      time: verifiedUser.registeredAt
+    });
+
     res.status(201).json({ 
       success: true,
       message: "User registered successfully",
-      user: {
-        username: verifiedUser.username,
-        mobileNumber: verifiedUser.mobileNumber
-      }
+      user: verifiedUser
     });
 
   } catch (err) {
@@ -944,75 +948,128 @@ app.post('/api/initiate-mobile-auth', async (req, res) => {
 
 // Complete Mobile Authentication
 // Enhanced Complete Mobile Auth Endpoint
-// Enhanced Complete Mobile Auth Endpoint
 app.post('/api/complete-mobile-auth', async (req, res) => {
   try {
     const { username, token, authData } = req.body;
 
-    console.log('Received auth completion request:', { username, token, authData });
+    console.log('Auth completion request received for:', username);
+    console.log('Token:', token);
+    console.log('AuthData:', authData);
 
-    // Validate input
+    // 1. Validate Input
     if (!username || !token || !authData) {
-      console.log('Missing required fields');
+      console.error('Missing required fields');
       return res.status(400).json({ 
         success: false,
-        error: 'Missing required fields' 
+        error: 'Username, token, and authData are required' 
       });
     }
 
-    // Verify token
+    // 2. Verify Session
     const session = mobileAuthSessions.get(username);
-    if (!session || session.token !== token) {
-      console.log('Invalid or expired token');
+    if (!session) {
+      console.error('No session found for username:', username);
       return res.status(401).json({ 
         success: false,
-        error: 'Invalid or expired token' 
+        error: 'Authentication session not found. Please restart the process.' 
+      });
+    }
+
+    if (session.token !== token) {
+      console.error('Token mismatch for user:', username);
+      return res.status(401).json({ 
+        success: false,
+        error: 'Invalid authentication token' 
       });
     }
 
     if (Date.now() > session.expiresAt) {
-      console.log('Token expired');
+      console.error('Expired token for user:', username);
       return res.status(401).json({ 
         success: false,
-        error: 'Token expired' 
+        error: 'Authentication session expired' 
       });
     }
 
-    // Convert serial number if needed
-    if (authData.allowedSerial && Array.isArray(authData.allowedSerial)) {
-      authData.allowedSerial = authData.allowedSerial.join(',');
+    // 3. Find User (check both collections)
+    let user = await User.findOne({ username });
+    if (!user) {
+      console.log('User not found in User collection, checking Manager collection...');
+      user = await Manager.findOne({ username });
     }
 
-    // Update user with NFC data
-    const updatedUser = await User.findOneAndUpdate(
-      { username },
+    if (!user) {
+      console.error('User not found in any collection:', username);
+      
+      // Debugging: Count documents in both collections
+      const userCount = await User.countDocuments({ username });
+      const managerCount = await Manager.countDocuments({ username });
+      console.log(`Debug: User counts - Users: ${userCount}, Managers: ${managerCount}`);
+      
+      return res.status(404).json({ 
+        success: false,
+        error: 'User registration not found. Please complete registration first.',
+        debug: {
+          collectionsChecked: ['users', 'managers'],
+          counts: { users: userCount, managers: managerCount }
+        }
+      });
+    }
+
+    // 4. Process NFC Data
+    if (authData.allowedSerial) {
+      if (Array.isArray(authData.allowedSerial)) {
+        // Convert array to string (e.g., "04:57:54:52:a6:1c:90")
+        authData.allowedSerial = authData.allowedSerial.join('');
+      }
+      // Additional validation
+      if (typeof authData.allowedSerial !== 'string' || authData.allowedSerial.length === 0) {
+        console.error('Invalid serial number format');
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid NFC serial number format'
+        });
+      }
+    }
+
+    // 5. Update User Record
+    const updateResult = await user.constructor.findOneAndUpdate(
+      { _id: user._id },
       { $set: { authData } },
-      { new: true }
+      { new: true, upsert: false }
     );
 
-    if (!updatedUser) {
-      console.log('User not found');
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
+    if (!updateResult) {
+      throw new Error('Database update failed');
     }
 
-    // Clear the session
+    // 6. Cleanup and Response
     mobileAuthSessions.delete(username);
-
-    console.log('Mobile authentication completed successfully for:', username);
-    res.json({ 
+    
+    console.log('Successfully updated NFC authentication for:', username);
+    return res.json({ 
       success: true,
-      message: 'Mobile authentication completed successfully'
+      message: 'NFC authentication completed successfully',
+      user: {
+        username: updateResult.username,
+        hasNfc: !!updateResult.authData
+      }
     });
 
   } catch (error) {
-    console.error('Mobile auth completion error:', error);
-    res.status(500).json({ 
+    console.error('Authentication completion failed:', {
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+    
+    return res.status(500).json({ 
       success: false,
-      error: 'Failed to complete mobile authentication',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: 'Internal server error during authentication',
+      details: process.env.NODE_ENV === 'development' ? {
+        message: error.message,
+        stack: error.stack
+      } : undefined
     });
   }
 });
