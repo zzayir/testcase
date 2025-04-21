@@ -220,16 +220,34 @@ if (sectionId === 'step4') {
 
  // Replace the mobile auth functions with these:
 
+// Modify the initiateMobileAuth function to ensure registration completes first:
 async function initiateMobileAuth() {
   const mobileAuthBtn = document.getElementById('mobileAuthBtn');
   const nfcStatus = document.getElementById('nfc-status');
   
-  // Disable button and show loading state
   mobileAuthBtn.disabled = true;
   nfcStatus.textContent = 'Preparing mobile authentication...';
   nfcStatus.className = 'message';
 
   try {
+    // First complete registration without NFC data
+    const regResponse = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+        mobileNumber: fullNumber,
+        authData: null
+      })
+    });
+
+    if (!regResponse.ok) {
+      throw new Error('Registration failed');
+    }
+
+    // Then initiate mobile auth
     const userData = {
       username: document.getElementById('username').value.trim(),
       mobileNumber: fullNumber,
@@ -247,10 +265,7 @@ async function initiateMobileAuth() {
       throw new Error(errorData.error || 'Failed to initiate mobile auth');
     }
 
-    const data = await response.json();
-    showSuccess('nfc-status', data.message || 'Authentication link sent to your mobile!');
-    
-    // Start polling for completion
+    showSuccess('nfc-status', 'Authentication link sent to your mobile!');
     startAuthPolling(userData.username);
 
   } catch (error) {
