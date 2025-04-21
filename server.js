@@ -888,8 +888,8 @@ app.post('/receive-nfc-data', (req, res) => {
 
 // ====== MOBILE AUTH REGISTER START ======
 
-// In your server.js
-const mobileAuthSessions = new Map();
+// Store mobile auth sessions
+const mobileAuthTokens = new Map();
 
 // Initiate mobile authentication
 app.post('/api/initiate-mobile-auth', async (req, res) => {
@@ -904,25 +904,43 @@ app.post('/api/initiate-mobile-auth', async (req, res) => {
       });
     }
 
+    // Check if user exists (for existing users)
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
     // Generate token (valid for 15 minutes)
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = Date.now() + 15 * 60 * 1000;
 
     // Store session
-    mobileAuthSessions.set(username, { token, expiresAt });
+    mobileAuthTokens.set(username, { 
+      token, 
+      expiresAt,
+      mobileNumber
+    });
 
     // Generate authentication link
     const authLink = `${req.protocol}://${req.get('host')}/res-webapp.html?username=${username}&token=${token}`;
 
-    // In production, send SMS via Twilio
-    if (process.env.NODE_ENV === 'production') {
+    // Send SMS via Twilio
+    try {
       await twilioClient.messages.create({
-        body: `Your authentication link: ${authLink}`,
+        body: `Your NFC authentication link: ${authLink}`,
         from: process.env.TWILIO_PHONE_NUMBER,
         to: mobileNumber
       });
-    } else {
-      console.log(`[DEV] Authentication link for ${username}: ${authLink}`);
+    } catch (twilioError) {
+      console.error('Twilio error:', twilioError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to send SMS',
+        details: process.env.NODE_ENV === 'development' ? twilioError.message : undefined
+      });
     }
 
     res.json({ 
@@ -934,7 +952,8 @@ app.post('/api/initiate-mobile-auth', async (req, res) => {
     console.error('Mobile auth initiation error:', error);
     res.status(500).json({ 
       success: false,
-      error: 'Failed to initiate mobile authentication'
+      error: 'Failed to initiate mobile authentication',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
@@ -954,16 +973,24 @@ app.get('/api/check-auth-completion', async (req, res) => {
     // Check if user has completed NFC registration
     const user = await User.findOne({ username });
     
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
     res.json({ 
       success: true,
-      completed: !!user?.authData
+      completed: !!user.authData
     });
 
   } catch (error) {
     console.error('Auth completion check error:', error);
     res.status(500).json({ 
       success: false,
-      error: 'Failed to check authentication status' 
+      error: 'Failed to check authentication status',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
@@ -982,8 +1009,8 @@ app.post('/api/complete-mobile-auth', async (req, res) => {
     }
 
     // Verify token
-    const storedToken = mobileAuthTokens.get(username);
-    if (!storedToken || storedToken.token !== token || Date.now() > storedToken.expiresAt) {
+    const session = mobileAuthTokens.get(username);
+    if (!session || session.token !== token || Date.now() > session.expiresAt) {
       return res.status(401).json({ 
         success: false,
         error: 'Invalid or expired token' 
@@ -991,24 +1018,37 @@ app.post('/api/complete-mobile-auth', async (req, res) => {
     }
 
     // Update user with NFC data
-    await User.updateOne(
+    const updatedUser = await User.findOneAndUpdate(
       { username },
-      { $set: { authData } }
+      { $set: { authData } },
+      { new: true }
     );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
 
     // Clear the token
     mobileAuthTokens.delete(username);
 
     res.json({ 
       success: true,
-      message: 'Mobile authentication completed successfully'
+      message: 'Mobile authentication completed successfully',
+      user: {
+        username: updatedUser.username,
+        hasNFC: !!updatedUser.authData
+      }
     });
 
   } catch (error) {
     console.error('Mobile auth completion error:', error);
     res.status(500).json({ 
       success: false,
-      error: 'Failed to complete mobile authentication' 
+      error: 'Failed to complete mobile authentication',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
