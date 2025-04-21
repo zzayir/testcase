@@ -710,51 +710,49 @@ app.post('/api/register', async (req, res) => {
   try {
     const { username, email, password, mobileNumber, authData } = req.body;
 
-    // Input validation
+    // Validate input
     if (!username || !email || !password || !mobileNumber) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    if (password.length < 8) {
-      return res.status(400).json({ error: "Password must be at least 8 characters" });
+    // Check if user exists in EITHER collection
+    const existingUser = await User.findOne({ username }) || await Manager.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: "Username already exists" });
     }
 
-    const userData = {
+    // Create in User collection by default
+    const newUser = new User({
       username,
       email,
-      password: password, // Storing plain password
-      mobileNumber
-    };
+      password, // Note: Should be hashed in production!
+      mobileNumber,
+      authData: authData || null
+    });
 
-    // Add authData if provided
-    if (authData) {
-      userData.authData = authData;
+    await newUser.save();
+
+    // Verify the user was actually created
+    const verifiedUser = await User.findOne({ username });
+    if (!verifiedUser) {
+      throw new Error("User creation verification failed");
     }
 
-    const newUser = new User(userData);
-    await newUser.save();
-    
     res.status(201).json({ 
+      success: true,
       message: "User registered successfully",
       user: {
-        username: newUser.username,
-        email: newUser.email,
-        mobileNumber: newUser.mobileNumber,
-        hasNFC: !!newUser.authData
+        username: verifiedUser.username,
+        mobileNumber: verifiedUser.mobileNumber
       }
     });
 
   } catch (err) {
     console.error("Registration error:", err);
-    
-    if (err.code === 11000) {
-      const field = Object.keys(err.keyPattern)[0];
-      return res.status(400).json({ 
-        error: `${field} already exists` 
-      });
-    }
-    
-    res.status(500).json({ error: "Registration failed" });
+    res.status(500).json({ 
+      error: "Registration failed",
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 
